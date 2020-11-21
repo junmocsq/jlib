@@ -4,6 +4,16 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
+type RedisKeyer interface {
+	DEL(keys ...string) int
+	EXPIRE(key string, expire int) int
+	TTL(key string) int
+	EXISTS(key string) int
+	RENAME(key, newKey string) bool
+	SCAN(num ...int) []string
+	SORT(key string, start, size int, isReverse ...bool) ([]float64, error)
+}
+
 func (j *jredis) DEL(keys ...string) int {
 	length := len(keys)
 	if length == 0 {

@@ -1,6 +1,9 @@
 package jredis
 
-import "github.com/gomodule/redigo/redis"
+import (
+	"github.com/gomodule/redigo/redis"
+)
+import "github.com/sirupsen/logrus"
 
 type jredis struct {
 	module string
@@ -22,16 +25,24 @@ func (j *jredis) GetKey(key string) string {
 }
 
 func (j *jredis) EXEC(conn redis.Conn, cmd string, args ...interface{}) (interface{}, error) {
-	return conn.Do(cmd, args...)
+	if debug {
+		logrus.Infof("cmd:%s %v", cmd, args)
+	}
+	res, err := conn.Do(cmd, args...)
+	return res, err
 }
 
 func (j *jredis) exec(cmd string, args ...interface{}) (interface{}, error) {
-	con := getPool(j.module).Get()
-	if err := con.Err(); err != nil {
+	conn := getPool(j.module).Get()
+	if err := conn.Err(); err != nil {
 		return nil, err
 	}
-	defer con.Close()
-	return con.Do(cmd, args...)
+	defer conn.Close()
+	if debug {
+		logrus.Infof("cmd:%s %v", cmd, args)
+	}
+	res, err := conn.Do(cmd, args...)
+	return res, err
 }
 
 // 格式化redis结果

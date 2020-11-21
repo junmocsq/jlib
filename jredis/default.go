@@ -7,6 +7,7 @@ import (
 var redisPool map[string]*redis.Pool = make(map[string]*redis.Pool)
 var prefixKeyArr = make(map[string]string)
 var defaultModule = ""
+var debug = false
 
 func init() {
 	// 注册redis default模块 必须注册
@@ -15,7 +16,6 @@ func init() {
 	// 注册redis sql模块
 	//RegisterRedisPool("sql","127.0.0.1","6379","","sql")
 }
-
 
 func RegisterRedisPool(module, host, port, auth, prefixKey string) {
 	// 只注册一次
@@ -32,6 +32,12 @@ func RegisterRedisPool(module, host, port, auth, prefixKey string) {
 
 func SetDefaultModule(module string) {
 	defaultModule = module
+}
+
+func SetDebug(d ...bool) {
+	if len(d) >= 1 {
+		debug = d[0]
+	}
 }
 
 // 获取redis key

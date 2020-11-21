@@ -6,7 +6,7 @@ import (
 )
 
 func TestJredis_KEY(t *testing.T) {
-	r := NewRedis()
+	var r RedisStringer = NewRedis()
 	k1, k2, k3 := "k1", "k2", "k3"
 
 	Convey("KEY", t, func() {
@@ -53,7 +53,7 @@ func TestJredis_KEY(t *testing.T) {
 		Convey("SORT", func() {
 			k1 := "oldk1"
 			r.DEL(k1)
-			r.SADD(k1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+			NewRedis().SADD(k1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 			res, _ := r.SORT(k1, 0, 5, true)
 			So(res[0], ShouldEqual, 10)
 			r.DEL(k1)
