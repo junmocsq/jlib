@@ -38,10 +38,14 @@ func (j *jredis) exec(cmd string, args ...interface{}) (interface{}, error) {
 		return nil, err
 	}
 	defer conn.Close()
-	if debug {
-		logrus.Infof("cmd:%s %v", cmd, args)
-	}
+
 	res, err := conn.Do(cmd, args...)
+	if debug {
+		logrus.WithField("jredis", "debug").Infof("cmd:%s %v res:%#v", cmd, args, res)
+	}
+	if err != nil {
+		logrus.WithField("jredis", "error").Errorf("cmd:%s %v err:%s", cmd, args, err.Error())
+	}
 	return res, err
 }
 
@@ -55,4 +59,8 @@ func (j *jredis) isOk(res interface{}, err error) bool {
 
 func (j *jredis) getKey(key string) string {
 	return getKey(j.module, key)
+}
+
+func (j *jredis) trimPrefixKey(key string) string {
+	return trimPrefixKey(j.module, key)
 }

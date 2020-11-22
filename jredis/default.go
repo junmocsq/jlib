@@ -2,6 +2,7 @@ package jredis
 
 import (
 	"github.com/gomodule/redigo/redis"
+	"strings"
 )
 
 var redisPool map[string]*redis.Pool = make(map[string]*redis.Pool)
@@ -44,6 +45,14 @@ func SetDebug(d ...bool) {
 func getKey(module, key string) string {
 	if prefixKey, ok := prefixKeyArr[module]; ok && prefixKey != "" {
 		return prefixKey + "_" + key
+	}
+	return key
+}
+
+// redis key 切去前缀
+func trimPrefixKey(module, key string) string {
+	if prefixKey, ok := prefixKeyArr[module]; ok && prefixKey != "" {
+		return strings.Trim(key, prefixKey+"_")
 	}
 	return key
 }
