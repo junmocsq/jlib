@@ -173,7 +173,8 @@ func (j *jredis) SREM(key string, members ...interface{}) int {
 }
 
 // SSCAN key cursor [MATCH pattern] [COUNT count]
-// Available since 2.8.0. Time complexity: O(1) for every call. O(N) for a complete iteration, including enough command calls for the cursor to return back to 0. N is the number of elements inside the collection..
+// Available since 2.8.0.
+// Time complexity: O(1) for every call. O(N) for a complete iteration, including enough command calls for the cursor to return back to 0. N is the number of elements inside the collection..
 func (j *jredis) SSCAN(key string, count int, pattern ...string) []string {
 	var list []string
 	seed := "0"
@@ -196,17 +197,14 @@ func (j *jredis) SSCAN(key string, count int, pattern ...string) []string {
 		if s, ok := arr[0].([]uint8); ok {
 			seed = string(s)
 		}
+
+		tempList, _ := redis.Strings(arr[1], nil)
+		list = append(list, tempList...)
+
 		// Starting an iteration with a cursor value of 0, and calling SSCAN
 		// until the returned cursor is 0 again is called a full iteration.
 		if seed == "0" {
 			break
-		}
-		if arrVal, ok := arr[1].([]interface{}); ok {
-			for _, v := range arrVal {
-				if val, ok := v.([]uint8); ok {
-					list = append(list, string(val))
-				}
-			}
 		}
 	}
 	return list
