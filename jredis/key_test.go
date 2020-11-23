@@ -58,6 +58,16 @@ func TestJredis_KEY(t *testing.T) {
 			So(res[0], ShouldEqual, 10)
 			r.DEL(k1)
 		})
+
+		SkipConvey("SCAN", func() {
+			k1, k2, k3 := "kk1", "kk2", "kk3"
+			m := make(map[string]interface{})
+			m[k1] = k1
+			m[k2] = k2
+			m[k3] = k3
+			NewRedis().MSET(m)
+			Print(r.SCAN(5000, "test*"))
+		})
 	})
 
 }

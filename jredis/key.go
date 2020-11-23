@@ -10,7 +10,7 @@ type RedisKeyer interface {
 	TTL(key string) int
 	EXISTS(key string) int
 	RENAME(key, newKey string) bool
-	SCAN(num ...int) []string
+	SCAN(count int, pattern ...string) []string
 	SORT(key string, start, size int, isReverse ...bool) ([]float64, error)
 }
 
@@ -57,15 +57,21 @@ func (j *jredis) RENAME(key, newKey string) bool {
 	return j.isOk(res, err)
 }
 
-func (j *jredis) SCAN(num ...int) []string {
-	limit := 100
-	if len(num) >= 1 {
-		limit = num[0]
+func (j *jredis) SCAN(count int, pattern ...string) []string {
+	patt := ""
+	if len(pattern) >= 1 {
+		patt = pattern[0]
 	}
 	var list []string
 	seed := "0"
 	for {
-		res, err := j.exec("SCAN", seed, "COUNT", limit)
+		var res interface{}
+		var err error
+		if patt != "" {
+			res, err = j.exec("SCAN", seed, "COUNT", count, "MATCH", patt)
+		} else {
+			res, err = j.exec("SCAN", seed, "COUNT", count)
+		}
 		arr, err := redis.Values(res, err)
 		if err != nil {
 			break

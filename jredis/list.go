@@ -18,7 +18,7 @@ type RedisLister interface {
 	LRANGE(key string, start, stop int) []string
 	LREM(key string, count int, value interface{}) int
 	LSET(key string, index int, value interface{}) bool
-	LTRIM(key string, start, stop int) int
+	LTRIM(key string, start, stop int) bool
 	RPOP(key string) string
 	RPOPLPUSH(source, destination string) string
 	RPUSH(key string, values ...interface{}) int
@@ -50,8 +50,11 @@ func (j *jredis) BRPOP(timeout int, keys ...string) []string {
 	}
 	arr[len(keys)] = timeout
 	res, err := j.exec("BRPOP", arr...)
-	str, err := redis.Strings(res, err)
-	return str
+	ret, err := redis.Strings(res, err)
+	if len(ret) == 2 {
+		ret[0] = j.trimPrefixKey(ret[0])
+	}
+	return ret
 }
 
 // BRPOPLPUSH source destination timeout
@@ -118,7 +121,7 @@ func (j *jredis) LPUSHX(key string, values ...interface{}) int {
 	arr := make([]interface{}, 1)
 	arr[0] = j.getKey(key)
 	arr = append(arr, values...)
-	res, err := j.exec("LPUSH", arr...)
+	res, err := j.exec("LPUSHX", arr...)
 	n, _ := redis.Int(res, err)
 	return n
 }
@@ -133,7 +136,9 @@ func (j *jredis) LRANGE(key string, start, stop int) []string {
 
 // LREM key count element
 // @return Integer reply: the number of removed elements
-// count=0 删除所有等于value的元素，count<0，删除从尾到前的abs(count)元素中等于value的元素。count>0删除从count到尾的等于value的元素
+// count > 0 : 从表头开始向表尾搜索，移除与 VALUE 相等的元素，数量为 COUNT 。
+// count < 0 : 从表尾开始向表头搜索，移除与 VALUE 相等的元素，数量为 COUNT 的绝对值。
+// count = 0 : 移除表中所有与 VALUE 相等的值。
 func (j *jredis) LREM(key string, count int, value interface{}) int {
 	res, err := j.exec("LREM", j.getKey(key), count, value)
 	n, _ := redis.Int(res, err)
@@ -150,10 +155,9 @@ func (j *jredis) LSET(key string, index int, value interface{}) bool {
 // LTRIM key start stop
 // @description Trim an existing list so that it will contain only the specified range of elements specified.
 // 列表剪裁
-func (j *jredis) LTRIM(key string, start, stop int) int {
+func (j *jredis) LTRIM(key string, start, stop int) bool {
 	res, err := j.exec("LTRIM", j.getKey(key), start, stop)
-	n, _ := redis.Int(res, err)
-	return n
+	return j.isOk(res, err)
 }
 
 // @return Bulk string reply: the value of the first element, or nil when key does not exist.
