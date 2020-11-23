@@ -5,6 +5,22 @@ import (
 )
 
 type RedisHasher interface {
+	HDEL(key string, fields ...interface{}) int
+	HEXISTS(key string, field interface{}) int
+	HGET(key string, field interface{}) string
+	HGETALL(key string) map[string]string
+	HINCRBY(key string, field interface{}, increment int) int
+	HINCRBYFLOAT(key string, field interface{}, increment float64) float64
+	HKEYS(key string) []string
+	HLEN(key string) int
+	HMGET(key string, fields ...interface{}) []string
+	HMSET(key string, mapKv map[interface{}]interface{}) bool
+	HSCAN(key string, count int, pattern ...string) map[string]string
+	HSET(key string, field, value interface{}) int
+	HSETNX(key string, field, value interface{}) int
+	HSTRLEN(key string, field interface{}) int
+	HVALS(key string) []string
+	RedisKeyer
 }
 
 // HDEL key field [field ...]

@@ -6,7 +6,7 @@ import (
 )
 
 func TestJredis_HASH(t *testing.T) {
-	var r = NewRedis()
+	var r RedisHasher = NewRedis()
 	key := "hash_kkk"
 
 	Convey("HASH", t, func() {
