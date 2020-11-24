@@ -15,12 +15,14 @@ func TestJredis_SET(t *testing.T) {
 			So(r.SADD(key, 121, 2, 3, 100, 200, "abc"), ShouldEqual, 6)
 			r.DEL(key)
 		})
+
 		Convey("SCARD", func() {
 			r.DEL(key)
 			r.SADD(key, 121, 2, 3, 100, 200, "abc")
 			So(r.SCARD(key), ShouldEqual, 6)
 			r.DEL(key)
 		})
+
 		Convey("SDIFF", func() {
 			key2 := key + "2"
 			r.DEL(key, key2)
@@ -139,7 +141,7 @@ func TestJredis_SET(t *testing.T) {
 			So(r.SUNIONSTORE(key3, key, key2), ShouldEqual, 3)
 			So(r.SMEMBERS(key3), ShouldContain, "csq")
 			Print(r.SMEMBERS(key3))
-			// OutPut: [abc lx csq]
+			// output: [abc lx csq]
 			r.DEL(key, key2, key3)
 		})
 	})

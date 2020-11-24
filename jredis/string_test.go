@@ -162,5 +162,5 @@ func ExampleJredis_GETRANGE() {
 	key := "kkkkkdghsjdgs"
 	r.SET(key, "hello")
 	fmt.Println(r.GETRANGE(key, 0, 0))
-	// OutPut: h
+	// output: h
 }
