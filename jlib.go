@@ -2,6 +2,6 @@ package jlib
 
 import "fmt"
 
-func Jlib()  {
+func Jlib() {
 	fmt.Println("jlib")
 }
