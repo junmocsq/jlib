@@ -3,6 +3,7 @@ module jlib
 go 1.14
 
 require (
+	github.com/chasex/redis-go-cluster v1.0.0
 	github.com/golang/mock v1.4.4 // indirect
 	github.com/gomodule/redigo v1.8.2
 	github.com/jonboulle/clockwork v0.2.2 // indirect
