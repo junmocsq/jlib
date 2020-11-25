@@ -1,7 +1,6 @@
 package jredis
 
 import (
-	"fmt"
 	"github.com/gomodule/redigo/redis"
 	"github.com/sirupsen/logrus"
 	"strconv"
@@ -31,6 +30,7 @@ type RedisZSetter interface {
 }
 
 // ZADD key [NX|XX] [GT|LT] [CH] score member [score member ...]
+
 // Time complexity: O(log(N)) for each item added, where N is the number of elements in the sorted set.
 // XX: Only update elements that already exist. Never add elements.
 // NX: Don't update already existing elements. Always add new elements.
@@ -160,7 +160,6 @@ func (j *jredis) ZRANGEBYSCORE(key string, min, max interface{}, limit ...interf
 //			If member does not exist in the sorted set or key does not exist, Bulk string reply: nil.
 func (j *jredis) ZRANK(key string, member interface{}) int {
 	ret, err := redis.Int(j.exec("ZRANK", j.getKey(key), member))
-	fmt.Println("ZRANK", ret, err)
 	if err == redis.ErrNil {
 		// 不存在返回-1
 		return -1

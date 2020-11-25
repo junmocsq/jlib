@@ -1,7 +1,6 @@
 package jredis
 
 import (
-	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"math/rand"
 	"strconv"
@@ -153,14 +152,13 @@ func TestJredis_STRING(t *testing.T) {
 			So(r.STRLEN(key), ShouldEqual, len(value1))
 			r.DEL(key)
 		})
-
 	})
 }
 
-func ExampleJredis_GETRANGE() {
+func BenchmarkJredis_String(b *testing.B) {
 	r := NewRedis()
-	key := "kkkkkdghsjdgs"
-	r.SET(key, "hello")
-	fmt.Println(r.GETRANGE(key, 0, 0))
-	// output: h
+	k := "Benchmark_String"
+	for i := 0; i < b.N; i++ {
+		r.SET(k, i)
+	}
 }
