@@ -2,8 +2,8 @@ package jredis
 
 import (
 	"github.com/gomodule/redigo/redis"
+	"github.com/sirupsen/logrus"
 )
-import "github.com/sirupsen/logrus"
 
 type jredis struct {
 	module string
@@ -57,10 +57,12 @@ func (j *jredis) isOk(res interface{}, err error) bool {
 	return false
 }
 
+// 返回带前缀的实际redis key
 func (j *jredis) getKey(key string) string {
 	return getKey(j.module, key)
 }
 
+// 去除前缀的业务传递key
 func (j *jredis) trimPrefixKey(key string) string {
 	return trimPrefixKey(j.module, key)
 }
