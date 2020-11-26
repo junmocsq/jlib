@@ -8,7 +8,7 @@ import (
 func TestMain(m *testing.M) {
 	RegisterRedisPool("default", "127.0.0.1", "6379", "", "test")
 	SetDefaultModule("default")
-	SetDebug(true)
+	//SetDebug(true)
 	m.Run()
 }
 

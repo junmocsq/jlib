@@ -1,15 +1,11 @@
 package jdb
 
-import "jlib/jredis"
-
 type cacheAccesser interface {
 	Set(key, value string, expire int) bool
 	Get(key string) string
 	Delete(key string) bool
 	Expire(key string, expire int) bool
 }
-
-var ()
 
 type cache struct {
 }

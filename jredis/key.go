@@ -92,6 +92,7 @@ func (j *jredis) SCAN(count int, pattern ...string) []string {
 	return list
 }
 
+// isReverse 是否倒序
 func (j *jredis) SORT(key string, start, size int, isReverse ...bool) ([]float64, error) {
 	reverse := "ASC"
 	if len(isReverse) >= 1 && isReverse[0] {

@@ -5,12 +5,13 @@ import (
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
+	"net/http"
 	"os"
 	"time"
 )
 
 // "/Users/junmo/go/src/jlib/logs"
-func Logs(logPath string) {
+func SetLogs(logPath string) {
 	// 设置日志级别为warn以上
 	logrus.SetLevel(logrus.DebugLevel)
 	logrus.SetReportCaller(true)
@@ -41,4 +42,16 @@ func Logs(logPath string) {
 	nullWriter := bufio.NewWriter(src)
 	logrus.SetOutput(nullWriter)
 
+}
+
+func Add(a int, b int) int {
+	return a + b
+}
+
+func Mul(a int, b int) int {
+	return a * b
+}
+
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("hello world"))
 }

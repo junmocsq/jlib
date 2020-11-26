@@ -20,7 +20,7 @@ func (j *jredis) Client() (redis.Conn, error) {
 	return getClient(j.module)
 }
 
-func (j *jredis) GetKey(key string) string {
+func (j *jredis) GetRealKey(key string) string {
 	return j.getKey(key)
 }
 
