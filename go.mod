@@ -1,6 +1,6 @@
 module jlib
 
-go 1.14
+go 1.15
 
 require (
 	github.com/chasex/redis-go-cluster v1.0.0
