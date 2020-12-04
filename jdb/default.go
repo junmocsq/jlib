@@ -5,7 +5,7 @@ import "jlib/jredis"
 var (
 	expire      = 300
 	cacheAccess cacheAccesser
-	dbAccess    DbAccesser
+	dbAccess    DbAccessor
 	Empty       = "nil"
 
 	redisModule = "sql"

@@ -2,97 +2,89 @@ package jdb
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"log"
-	"math/rand"
+	"gorm.io/plugin/dbresolver"
 	"time"
 )
 
-type DbAccesser interface {
-	FetchOne()
-	FetchAll()
-	Update()
-	Insert()
+type DbAccessor interface {
+	FetchOne(ret interface{}) error
+	FetchAll(ret interface{}) error
+	RowsAffected() (int64, error)
+	Insert(model interface{}, fields ...string) error
+	Begin() (err error)
+	RollBack() (err error)
+	Commit() (err error)
+	setSqlAndParams(sql string, params []interface{})
 }
 
-var dbPool = make(map[string][]*sql.DB)
+var dbMap = make(map[string]*gorm.DB)
 
 // 注册数据库
 // params ConnMaxLifetime(s) MaxOpenConns MaxIdleConns
 // "mysql", "root:123456@tcp(localhost:3306)/test"
-func RegisterSqlDb(dsn, dbname string, isSlave bool, params ...int) {
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic(err)
+func RegisterSqlDb(identifier string, isSlave bool, dsn ...string) {
+	if !isSlave {
+		db, err := gorm.Open(mysql.Open(dsn[0]), &gorm.Config{})
+		if err != nil {
+			panic(err)
+		}
+		dbMap[identifier] = db
+	} else {
+		db, ok := dbMap[identifier]
+		if !ok {
+			panic("请设置 " + identifier + " 的主库")
+		}
+		var arr []gorm.Dialector
+		for _, v := range dsn {
+			arr = append(arr, mysql.Open(v))
+		}
+		db.Use(dbresolver.Register(dbresolver.Config{
+			Replicas: arr,
+			// sources/replicas 负载均衡策略
+			Policy: dbresolver.RandomPolicy{},
+		}))
 	}
-	sqlDB, err := db.DB()
+}
+
+// ConnMaxLifetime(s) ConnMaxIdleTime(s) MaxOpenConns MaxIdleConns
+func SetDbPoolParams(identifier string, params ...int) {
+	db, ok := dbMap[identifier]
+	if !ok {
+		panic("请设置 " + identifier + " 的主库")
+	}
+	sqlDB, _ := db.DB()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	if err := sqlDB.PingContext(ctx); err != nil {
-		logrus.WithField("sql", "ping").Infof("%s  status:down!!!", dbname)
+		logrus.WithField("sql", "ping").Infof("%s  status:down!!!", identifier)
 		return
 	}
 
-	// ConnMaxLifetime(s) MaxOpenConns MaxIdleConns
-	setting := []int{180, 100, 10}
-	if len(params) > 3 {
+	// ConnMaxLifetime(s) ConnMaxIdleTime(s) MaxOpenConns MaxIdleConns
+	setting := []int{3600, 600, 100, 10}
+	if len(params) > 4 {
 		panic("RegisterSqlDb params is error!")
 	}
 	for k, v := range params {
 		setting[k] = v
 	}
 	sqlDB.SetConnMaxLifetime(time.Second * time.Duration(setting[0]))
-	sqlDB.SetMaxOpenConns(setting[1])
-	sqlDB.SetMaxIdleConns(setting[2])
-	dbPool[getDbPoolKey(dbname, isSlave)] = append(dbPool[getDbPoolKey(dbname, isSlave)], sqlDB)
+	sqlDB.SetConnMaxIdleTime(time.Second * time.Duration(setting[1]))
+	sqlDB.SetMaxOpenConns(setting[2])
+	sqlDB.SetMaxIdleConns(setting[3])
 }
 
-// 获取db库key
-func getDbPoolKey(dbname string, isSlave bool) string {
-	if isSlave {
-		return dbname + "_0"
-	} else {
-		return dbname + "_1"
+// 获取db
+func GetDb(identifier string) *gorm.DB {
+	db, ok := dbMap[identifier]
+	if !ok {
+		panic("请注册 " + identifier + " 的数据库")
 	}
-}
-
-func getMaster(dbname string) *sql.DB {
-	if r, ok := dbPool[getDbPoolKey(dbname, false)]; ok {
-		length := len(r)
-		if length == 0 {
-			panic("dbname:" + dbname + " master is not set!")
-		}
-		index := rand.Intn(length)
-		return r[index]
-	}
-	panic("dbname:" + dbname + " master is not set!")
-
-}
-
-func getSlave(dbname string) *sql.DB {
-	if r, ok := dbPool[getDbPoolKey(dbname, true)]; ok {
-		length := len(r)
-		if length == 0 {
-			return getMaster(dbname)
-		}
-		index := rand.Intn(length)
-		return r[index]
-	}
-	return getMaster(dbname)
-}
-
-// 获取db pool
-func getDb(dbname string, isSlave bool) *sql.DB {
-	if isSlave {
-		return getSlave(dbname)
-	} else {
-		return getMaster(dbname)
-	}
+	return db
 }
 
 type db struct {
@@ -100,162 +92,95 @@ type db struct {
 	sql     string
 	dbname  string
 	params  []interface{}
-	sqlDb   *sql.DB
-	sqlTx   *sql.Tx
+	gormDb  *gorm.DB
+	gormTx  *gorm.DB
 	isTx    bool
-	ctx     context.Context
 }
 
-func NewDb(sql, dbname string, params []interface{}, isSlave ...bool) *db {
+func newDb(dbname string, isSlave ...bool) *db {
 	d := &db{
 		isSlave: false,
-		sql:     sql,
 		dbname:  dbname,
-		params:  params,
 	}
 	if len(isSlave) > 0 {
 		d.isSlave = isSlave[0]
 	}
-	d.sqlDb = getDb(d.dbname, d.isSlave)
-	d.ctx = context.Background()
+	d.gormDb = GetDb(d.dbname).WithContext(context.Background())
 	return d
 }
+func (d *db) setSqlAndParams(sql string, params []interface{}) {
+	d.sql = sql
+	d.params = params
+}
 
-func (d *db) Update() (int64, error) {
+func (d *db) FetchOne(ret interface{}) error {
+	selectDb := d.gormDb
 	if d.isTx {
-		return d.updateTx()
-	} else {
-		return d.update()
+		selectDb = d.gormTx
 	}
+	if !d.isSlave {
+		selectDb = selectDb.Clauses(dbresolver.Write)
+	}
+	res := selectDb.Raw(d.sql, d.params...).Scan(ret)
+	return res.Error
 }
 
-func (d *db) update() (int64, error) {
-	conn, err := d.sqlDb.Conn(d.ctx)
-	if err != nil {
-		logrus.WithField("sql", "conn").Errorf("update conn err:%s", err.Error())
-		return 0, err
-	}
-	defer conn.Close() // Return the connection to the pool.
-	result, err := conn.ExecContext(d.ctx, d.sql, d.params...)
-	if err != nil {
-		logrus.WithField("sql", "ExecContext").Errorf("update ExecContext err:%s", err.Error())
-		return 0, err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		logrus.WithField("sql", "RowsAffected").Errorf("update RowsAffected err:%s", err.Error())
-		return 0, err
-	}
-	return rows, nil
-}
-
-func (d *db) updateTx() (int64, error) {
-	result, err := d.sqlTx.ExecContext(d.ctx, d.sql, d.params...)
-	if err != nil {
-		logrus.WithField("sql", "ExecContext").Errorf("update ExecContext err:%s", err.Error())
-		return 0, err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		logrus.WithField("sql", "RowsAffected").Errorf("update RowsAffected err:%s", err.Error())
-		return 0, err
-	}
-	return rows, nil
-}
-
-func (d *db) Insert() (int64, error) {
+func (d *db) FetchAll(ret interface{}) error {
+	selectDb := d.gormDb
 	if d.isTx {
-		return d.updateTx()
+		selectDb = d.gormTx
+	}
+	if !d.isSlave {
+		selectDb = selectDb.Clauses(dbresolver.Write)
+	}
+	res := selectDb.Raw(d.sql, d.params...).Scan(ret)
+	return res.Error
+}
+
+func (d *db) RowsAffected() (int64, error) {
+	selectDb := d.gormDb
+	if d.isTx {
+		selectDb = d.gormTx
+	}
+	res := selectDb.Exec(d.sql, d.params...)
+	return res.RowsAffected, res.Error
+}
+
+func (d *db) Insert(model interface{}, fields ...string) error {
+	selectDb := d.gormDb
+	if d.isTx {
+		selectDb = d.gormTx
+	}
+	if len(fields) > 0 {
+		selectDb = selectDb.Select(fields).Create(model)
 	} else {
-		return d.update()
+		selectDb = selectDb.Create(model)
 	}
+	return selectDb.Error
 }
 
-func (d *db) insert() (int64, error) {
-	conn, err := d.sqlDb.Conn(d.ctx)
-	if err != nil {
-		logrus.WithField("sql", "conn").Errorf("Insert conn err:%s", err.Error())
-		return 0, err
-	}
-	defer conn.Close() // Return the connection to the pool.
-	result, err := conn.ExecContext(d.ctx, d.sql, d.params...)
-	if err != nil {
-		logrus.WithField("sql", "ExecContext").Errorf("Insert ExecContext err:%s", err.Error())
-		return 0, err
-	}
-	rows, err := result.LastInsertId()
-	if err != nil {
-		logrus.WithField("sql", "LastInsertId").Errorf("Insert LastInsertId err:%s", err.Error())
-		return 0, err
-	}
-	return rows, nil
-}
-
-func (d *db) insertTx() (int64, error) {
-	result, err := d.sqlTx.ExecContext(d.ctx, d.sql, d.params...)
-	if err != nil {
-		logrus.WithField("sql", "ExecContext").Errorf("Insert ExecContext err:%s", err.Error())
-		return 0, err
-	}
-	rows, err := result.LastInsertId()
-	if err != nil {
-		logrus.WithField("sql", "LastInsertId").Errorf("Insert LastInsertId err:%s", err.Error())
-		return 0, err
-	}
-	return rows, nil
-}
-
-func (d *db) BeginTx() (err error) {
+func (d *db) Begin() (err error) {
 	d.isTx = true
-	d.sqlTx, err = d.sqlDb.BeginTx(d.ctx, nil)
-	return
+	d.gormTx = d.gormDb.Begin()
+	return d.gormTx.Error
 }
 
 func (d *db) RollBack() (err error) {
 	if !d.isTx {
 		panic("please BeginTx!!!")
 	}
-	err = d.sqlTx.Rollback()
+	r := d.gormTx.Rollback()
 	d.isTx = false
-	return
+	d.gormTx = nil
+	return r.Error
 }
 
 func (d *db) Commit() (err error) {
 	if !d.isTx {
 		panic("please BeginTx!!!")
 	}
-	err = d.sqlTx.Commit()
+	r := d.gormTx.Rollback()
 	d.isTx = false
-	return
-}
-
-func (d *db) FetchOne() (int64, error) {
-	conn, err := d.sqlDb.Conn(d.ctx)
-	if err != nil {
-		logrus.WithField("sql", "conn").Errorf("Insert conn err:%s", err.Error())
-		return 0, err
-	}
-	defer conn.Close() // Return the connection to the pool.
-	rows, err := conn.QueryContext(d.ctx, d.sql, d.params...)
-	if err != nil {
-		logrus.WithField("sql", "ExecContext").Errorf("Insert ExecContext err:%s", err.Error())
-		return 0, err
-	}
-	defer rows.Close()
-	fmt.Println(rows.Columns())
-	fmt.Println(rows.ColumnTypes())
-
-	names := make([]int, 0)
-	for rows.Next() {
-		var id int
-		var name int
-		if err := rows.Scan(&id, &name); err != nil {
-			// Check for a scan error.
-			// Query rows will be closed with defer.
-			log.Fatal(err)
-		}
-		names = append(names, id)
-	}
-	fmt.Println(names)
-	return 0, nil
+	d.gormTx = nil
+	return r.Error
 }

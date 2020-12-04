@@ -1,15 +1,24 @@
 package jdb
 
+import (
+	"errors"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+)
+
 type Dao interface {
-	SetDb(dbname string) Dao
+	SetDb(dbname string, isSlave ...bool) Dao
 	SetTag(tag string) Dao
 	SetKey(key string) Dao
 	PrepareSql(sql string, args ...interface{}) Dao
 	ClearCache() bool
-	FetchOne()
-	FetchAll()
-	Insert()
-	Update()
+	FetchOne(ret interface{}) (err error)
+	FetchAll(ret interface{}) (err error)
+	RowsAffected() (int64, error)
+	Insert(model interface{}, fields ...string) error
+	Begin() (err error)
+	RollBack() (err error)
+	Commit() (err error)
 }
 
 type dao struct {
@@ -21,13 +30,20 @@ type dao struct {
 	tagKey  string
 	isSlave bool
 	isCache bool
+	db      DbAccessor
 }
 
 func NewDao() *dao {
 	return &dao{}
 }
-func (d *dao) SetDb(dbname string) Dao {
+
+func (d *dao) SetDb(dbname string, isSlave ...bool) Dao {
 	d.dbname = dbname
+	slave := false
+	if len(isSlave) > 0 {
+		slave = isSlave[0]
+	}
+	d.db = newDb(dbname, slave)
 	return d
 }
 
@@ -52,6 +68,7 @@ func (d *dao) PrepareSql(sql string, args ...interface{}) Dao {
 	d.sql = sql
 	d.params = args
 	d.tagKey = d.genSqlCacheKey()
+	d.db.setSqlAndParams(d.sql, d.params)
 	return d
 }
 
@@ -80,7 +97,7 @@ func (d *dao) genSqlCacheKey() string {
 	return hash(tagNum, d.sql, d.params)
 }
 
-func (d *dao) FetchOne() {
+func (d *dao) FetchOne(ret interface{}) (err error) {
 	defer d.clear()
 	if d.isCache {
 		// 查询cache
@@ -88,17 +105,31 @@ func (d *dao) FetchOne() {
 		if cacheRes == Empty {
 			return
 		} else if cacheRes != "" {
+			e := JsonDecode(cacheRes, ret)
+			if e != nil {
+				logrus.WithField("dao", "JsonDecode").Errorf("data:%#v err:%s", ret, e.Error())
+			}
 			return
 		}
 	}
-	dbAccess.FetchOne()
+	err = d.db.FetchOne(ret)
 	if d.isCache {
-		cacheAccess.Set(d.tagKey, Empty, expire)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			cacheAccess.Set(d.tagKey, Empty, expire)
+		}
+		if ret != nil {
+			jres, e := JsonEncode(ret)
+			if e == nil {
+				cacheAccess.Set(d.tagKey, jres, expire)
+			} else {
+				logrus.WithField("dao", "JsonEncode").Errorf("data:%#v err:%s", ret, e.Error())
+			}
+		}
 	}
 	return
 }
 
-func (d *dao) FetchAll() {
+func (d *dao) FetchAll(ret interface{}) (err error) {
 	defer d.clear()
 	if d.isCache {
 		// 查询cache
@@ -106,30 +137,58 @@ func (d *dao) FetchAll() {
 		if cacheRes == Empty {
 			return
 		} else if cacheRes != "" {
+			e := JsonDecode(cacheRes, ret)
+			if e != nil {
+				logrus.WithField("dao", "JsonDecode").Errorf("data:%#v err:%s", ret, e.Error())
+			}
 			return
 		}
 	}
-	dbAccess.FetchAll()
+	err = d.db.FetchAll(ret)
 	if d.isCache {
-		cacheAccess.Set(d.tagKey, Empty, expire)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			cacheAccess.Set(d.tagKey, Empty, expire)
+		}
+		if ret != nil {
+			jres, e := JsonEncode(ret)
+			if e == nil {
+				cacheAccess.Set(d.tagKey, jres, expire)
+			} else {
+				logrus.WithField("dao", "JsonEncode").Errorf("data:%#v err:%s", ret, e.Error())
+			}
+		}
 	}
 	return
 }
 
-func (d *dao) Insert() {
+func (d *dao) RowsAffected() (int64, error) {
 	defer d.clear()
-	dbAccess.Insert()
+	n, e := d.db.RowsAffected()
 	if d.isCache {
 		cacheAccess.Delete(d.getCacheKey())
 	}
+	return n, e
 }
 
-func (d *dao) Update() {
+func (d *dao) Insert(model interface{}, fields ...string) error {
 	defer d.clear()
-	dbAccess.Update()
+	e := d.db.Insert(model, fields...)
 	if d.isCache {
 		cacheAccess.Delete(d.getCacheKey())
 	}
+	return e
+}
+
+func (d *dao) Begin() (err error) {
+	return d.db.Begin()
+}
+
+func (d *dao) RollBack() (err error) {
+	return d.db.RollBack()
+}
+
+func (d *dao) Commit() (err error) {
+	return d.db.Commit()
 }
 
 func (d *dao) clear() {
