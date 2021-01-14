@@ -7,14 +7,13 @@ import (
 )
 
 type Dao interface {
-	SetDb(dbname string, isSlave ...bool) Dao
 	SetTag(tag string) Dao
 	SetKey(key string) Dao
 	PrepareSql(sql string, args ...interface{}) Dao
 	ClearCache() bool
 	FetchOne(ret interface{}) (err error)
 	FetchAll(ret interface{}) (err error)
-	RowsAffected() (int64, error)
+	RowsAffected() (int64, error) // update,delete,replace into
 	Insert(model interface{}, fields ...string) error
 	Begin() (err error)
 	RollBack() (err error)
@@ -33,22 +32,14 @@ type dao struct {
 	db      DbAccessor
 }
 
-func NewDao() *dao {
-	return &dao{}
-}
-
-func (d *dao) SetDb(dbname string, isSlave ...bool) Dao {
+func NewDao(dbname string, isSlave ...bool) Dao {
+	d := &dao{}
 	d.dbname = dbname
 	slave := false
 	if len(isSlave) > 0 {
 		slave = isSlave[0]
 	}
-	d.db = newDb(dbname, slave)
-	return d
-}
-
-func (d *dao) SetSlave() Dao {
-	d.isSlave = true
+	d.isSlave = slave
 	return d
 }
 
@@ -112,6 +103,9 @@ func (d *dao) FetchOne(ret interface{}) (err error) {
 			return
 		}
 	}
+	if d.db == nil {
+		d.db = newDb(d.dbname, d.isSlave)
+	}
 	err = d.db.FetchOne(ret)
 	if d.isCache {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -144,6 +138,9 @@ func (d *dao) FetchAll(ret interface{}) (err error) {
 			return
 		}
 	}
+	if d.db == nil {
+		d.db = newDb(d.dbname, d.isSlave)
+	}
 	err = d.db.FetchAll(ret)
 	if d.isCache {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -163,6 +160,9 @@ func (d *dao) FetchAll(ret interface{}) (err error) {
 
 func (d *dao) RowsAffected() (int64, error) {
 	defer d.clear()
+	if d.db == nil {
+		d.db = newDb(d.dbname, d.isSlave)
+	}
 	n, e := d.db.RowsAffected()
 	if d.isCache {
 		cacheAccess.Delete(d.getCacheKey())
@@ -172,6 +172,9 @@ func (d *dao) RowsAffected() (int64, error) {
 
 func (d *dao) Insert(model interface{}, fields ...string) error {
 	defer d.clear()
+	if d.db == nil {
+		d.db = newDb(d.dbname, d.isSlave)
+	}
 	e := d.db.Insert(model, fields...)
 	if d.isCache {
 		cacheAccess.Delete(d.getCacheKey())
@@ -180,6 +183,9 @@ func (d *dao) Insert(model interface{}, fields ...string) error {
 }
 
 func (d *dao) Begin() (err error) {
+	if d.db == nil {
+		d.db = newDb(d.dbname, d.isSlave)
+	}
 	return d.db.Begin()
 }
 

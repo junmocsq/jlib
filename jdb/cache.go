@@ -7,6 +7,10 @@ type cacheAccesser interface {
 	Expire(key string, expire int) bool
 }
 
+func newCache() cacheAccesser {
+	return &cache{}
+}
+
 type cache struct {
 }
 

@@ -65,7 +65,8 @@ func SetDbPoolParams(identifier string, params ...int) {
 	}
 
 	// ConnMaxLifetime(s) ConnMaxIdleTime(s) MaxOpenConns MaxIdleConns
-	setting := []int{3600, 600, 100, 10}
+	// MaxOpenConns MaxIdleConns 建议相同
+	setting := []int{180, 90, 100, 100}
 	if len(params) > 4 {
 		panic("RegisterSqlDb params is error!")
 	}
