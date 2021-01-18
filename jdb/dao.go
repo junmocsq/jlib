@@ -58,7 +58,9 @@ func (d *dao) SetKey(key string) Dao {
 func (d *dao) PrepareSql(sql string, args ...interface{}) Dao {
 	d.sql = sql
 	d.params = args
-	d.tagKey = d.genSqlCacheKey()
+	if d.isCache {
+		d.tagKey = d.genSqlCacheKey()
+	}
 	d.db.setSqlAndParams(d.sql, d.params)
 	return d
 }
@@ -176,7 +178,7 @@ func (d *dao) Insert(model interface{}, fields ...string) error {
 		d.db = newDb(d.dbname, d.isSlave)
 	}
 	e := d.db.Insert(model, fields...)
-	if d.isCache {
+	if e == nil && d.isCache {
 		cacheAccess.Delete(d.getCacheKey())
 	}
 	return e

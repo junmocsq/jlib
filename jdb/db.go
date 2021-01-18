@@ -180,7 +180,7 @@ func (d *db) Commit() (err error) {
 	if !d.isTx {
 		panic("please BeginTx!!!")
 	}
-	r := d.gormTx.Rollback()
+	r := d.gormTx.Commit()
 	d.isTx = false
 	d.gormTx = nil
 	return r.Error
