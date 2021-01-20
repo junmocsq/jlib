@@ -2,9 +2,12 @@ package jdb
 
 import (
 	"errors"
+	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"gorm.io/gorm"
+	"math/rand"
 	"testing"
+	"time"
 )
 
 func TestDb(t *testing.T) {
@@ -84,15 +87,39 @@ func TestDb(t *testing.T) {
 		Convey("Update", func() {
 			var u User
 			db.First(&u)
-			t.Log(u)
 			u.Name = "张小凡"
+			// 更细多列
 			ttt := db.Save(u)
 			db.First(&u)
-			t.Log(u, ttt.RowsAffected)
+			So(ttt.RowsAffected, ShouldEqual, 1)
+
+			rand.Seed(time.Now().Unix())
+			// 更新一列
+			r1 := db.Model(&User{}).Where("phone >= ?", 15201400005).
+				Update("signature", "大葱小时候"+fmt.Sprintf("%d", rand.Int()))
+			So(r1.RowsAffected, ShouldEqual, 3)
+			r2 := db.Model(&User{}).Where("phone <= ?", 15201400004).
+				Update("signature", "小葱长大了"+fmt.Sprintf("%d", rand.Int()))
+			So(r2.RowsAffected, ShouldEqual, 4)
+
+			r3 := db.Session(&gorm.Session{DryRun: true}).Model(&u).Update("signature", "张小二").Statement
+			// UPDATE `test_user` SET `signature`=?,`updated_at`=? WHERE `id` = ? [张小二 1611140898 1]
+			t.Log(r3.SQL.String(), r3.Vars)
+
+			// 更新多列
+			r4 := db.Model(&User{}).Where("phone <= ?", 15201400004).
+				Updates(User{Signature: "小葱长大了" + fmt.Sprintf("%d", rand.Int()), Sex: 2})
+			t.Log(r4.RowsAffected, r4.Statement.Changed("signature"))
+
+			// 更新多列 Select选择字段 Omit忽略字段
+			r5 := db.Model(&User{}).Where("phone <= ?", 15201400004).
+				Updates(map[string]interface{}{"sex": rand.Intn(10), "signature": "小葱长大了5-" + fmt.Sprintf("%d", rand.Int())})
+			t.Log(r5.RowsAffected, r5.Statement.Changed("Sex", "UpdatedAt"))
+			// 如果您想在更新时跳过 Hook 方法且不追踪更新时间，可以使用 UpdateColumn、UpdateColumns，其用法类似于 Update、Updates
 		})
 
-		Convey("Find", func() {
-			var u Topic
+		SkipConvey("Find", func() {
+			var u User
 			a := db.First(&u)
 			t.Log(u, a.RowsAffected, a.Error, errors.Is(a.Error, gorm.ErrRecordNotFound))
 			u.Id = 0

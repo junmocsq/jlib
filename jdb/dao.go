@@ -66,6 +66,7 @@ func (d *dao) PrepareSql(sql string, args ...interface{}) Dao {
 }
 
 func (d *dao) getCacheKey() string {
+	// 设置key 返回key 否则返回tag
 	str := d.tag
 	if str == "" {
 		panic("请设置cache tag")
