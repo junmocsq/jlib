@@ -1,4 +1,4 @@
-module jlib
+module github.com/junmocsq/jlib
 
 go 1.15
 

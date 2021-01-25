@@ -1,6 +1,6 @@
 package jdb
 
-import "jlib/jredis"
+import "github.com/junmocsq/jlib/jredis"
 
 var (
 	expire      = 300
