@@ -7,6 +7,7 @@ import (
 )
 
 type Dao interface {
+	Debug() Dao
 	SetTag(tag string) Dao
 	SetKey(key string) Dao
 	PrepareSql(sql string, args ...interface{}) Dao
@@ -29,6 +30,7 @@ type dao struct {
 	tagKey  string
 	isSlave bool
 	isCache bool
+	isDebug bool
 	db      DbAccessor
 }
 
@@ -40,6 +42,11 @@ func NewDao(dbname string, isSlave ...bool) Dao {
 		slave = isSlave[0]
 	}
 	d.isSlave = slave
+	return d
+}
+
+func (d *dao) Debug() Dao {
+	d.isDebug = true
 	return d
 }
 
@@ -107,7 +114,7 @@ func (d *dao) FetchOne(ret interface{}) (err error) {
 		}
 	}
 	if d.db == nil {
-		d.db = newDb(d.dbname, d.isSlave)
+		d.db = newDb(d.dbname, d.isDebug, d.isSlave)
 	}
 	err = d.db.FetchOne(ret)
 	if d.isCache {
@@ -142,7 +149,7 @@ func (d *dao) FetchAll(ret interface{}) (err error) {
 		}
 	}
 	if d.db == nil {
-		d.db = newDb(d.dbname, d.isSlave)
+		d.db = newDb(d.dbname, d.isDebug, d.isSlave)
 	}
 	err = d.db.FetchAll(ret)
 	if d.isCache {
@@ -164,7 +171,7 @@ func (d *dao) FetchAll(ret interface{}) (err error) {
 func (d *dao) RowsAffected() (int64, error) {
 	defer d.clear()
 	if d.db == nil {
-		d.db = newDb(d.dbname, d.isSlave)
+		d.db = newDb(d.dbname, d.isDebug, d.isSlave)
 	}
 	n, e := d.db.RowsAffected()
 	if d.isCache {
@@ -176,7 +183,7 @@ func (d *dao) RowsAffected() (int64, error) {
 func (d *dao) Insert(model interface{}, fields ...string) error {
 	defer d.clear()
 	if d.db == nil {
-		d.db = newDb(d.dbname, d.isSlave)
+		d.db = newDb(d.dbname, d.isDebug, d.isSlave)
 	}
 	e := d.db.Insert(model, fields...)
 	if e == nil && d.isCache {
@@ -187,7 +194,7 @@ func (d *dao) Insert(model interface{}, fields ...string) error {
 
 func (d *dao) Begin() (err error) {
 	if d.db == nil {
-		d.db = newDb(d.dbname, d.isSlave)
+		d.db = newDb(d.dbname, d.isDebug, d.isSlave)
 	}
 	return d.db.Begin()
 }

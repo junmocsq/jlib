@@ -1,11 +1,15 @@
 package jdb
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"log"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 )
@@ -118,7 +122,7 @@ func TestDb(t *testing.T) {
 			// 如果您想在更新时跳过 Hook 方法且不追踪更新时间，可以使用 UpdateColumn、UpdateColumns，其用法类似于 Update、Updates
 		})
 
-		SkipConvey("Find", func() {
+		Convey("Find", func() {
 			var u User
 			a := db.First(&u)
 			t.Log(u, a.RowsAffected, a.Error, errors.Is(a.Error, gorm.ErrRecordNotFound))
@@ -130,7 +134,33 @@ func TestDb(t *testing.T) {
 			t.Log(u, a.RowsAffected, a.Error)
 
 			b := db.Session(&gorm.Session{DryRun: true}).Take(&u).Statement
-			t.Log(b.SQL.String(), b.Vars)
+			t.Log(db.Dialector.Explain(b.SQL.String(), b.Vars))
+
+			var uu []User
+			if err := db.Where("name LIKE ?", "%小%").Where("id > ?", 3).Find(&uu).Error; err != nil {
+				t.Log(err)
+				return
+			}
+			t.Log(uu)
+
+			// 新建会话模式线程安全，不带WithContext线程不安全
+			tx := db.Where("name LIKE ?", "%小%").WithContext(context.Background())
+			// 不安全的复用 Statement
+			for i := 0; i < 10; i++ {
+				go tx.Where("id > ?", 3).First(&u)
+			}
+
+			newLogger := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags),
+				logger.Config{
+					SlowThreshold: time.Microsecond,
+				})
+			// 会话模式
+			tx2 := db.Session(&gorm.Session{Logger: newLogger}).Debug()
+			tx2.First(&u)
+			tx2.Find(&users)
+			tx2.Model(&u).Update("sex", 1)
+			tx2.Where("name LIKE ?", "%小%").Where("id > ?", 3).Find(&uu)
+
 		})
 	})
 }

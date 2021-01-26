@@ -98,7 +98,7 @@ type db struct {
 	isTx    bool
 }
 
-func newDb(dbname string, isSlave ...bool) *db {
+func newDb(dbname string, isDebug bool, isSlave ...bool) *db {
 	d := &db{
 		isSlave: false,
 		dbname:  dbname,
@@ -107,6 +107,9 @@ func newDb(dbname string, isSlave ...bool) *db {
 		d.isSlave = isSlave[0]
 	}
 	d.gormDb = GetDb(d.dbname).WithContext(context.Background())
+	if isDebug {
+		d.gormDb = d.gormDb.Debug()
+	}
 	return d
 }
 func (d *db) setSqlAndParams(sql string, params []interface{}) {
