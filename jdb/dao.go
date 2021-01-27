@@ -42,6 +42,7 @@ func NewDao(dbname string, isSlave ...bool) Dao {
 		slave = isSlave[0]
 	}
 	d.isSlave = slave
+	d.isDebug = DEBUG
 	return d
 }
 

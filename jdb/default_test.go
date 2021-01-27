@@ -20,6 +20,6 @@ func TestMain(m *testing.M) {
 	RegisterSqlDb("test", false, writeDb)
 	RegisterSqlDb("test", true, readDbs...)
 	SetDbPoolParams("test", 180, 90, 5, 5)
-	//SetDebug(true)
+	SetDebug(true)
 	m.Run()
 }

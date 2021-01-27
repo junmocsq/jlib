@@ -79,13 +79,22 @@ func SetDbPoolParams(identifier string, params ...int) {
 	sqlDB.SetMaxIdleConns(setting[3])
 }
 
-// 获取db
-func GetDb(identifier string) *gorm.DB {
+func getDb(identifier string) *gorm.DB {
 	db, ok := dbMap[identifier]
 	if !ok {
 		panic("请注册 " + identifier + " 的数据库")
 	}
 	return db
+}
+
+// 获取db
+func GetDb(identifier string) *gorm.DB {
+	if DEBUG {
+		return getDb(identifier).Debug()
+	} else {
+		return getDb(identifier)
+	}
+
 }
 
 type db struct {
@@ -106,7 +115,7 @@ func newDb(dbname string, isDebug bool, isSlave ...bool) *db {
 	if len(isSlave) > 0 {
 		d.isSlave = isSlave[0]
 	}
-	d.gormDb = GetDb(d.dbname).WithContext(context.Background())
+	d.gormDb = getDb(d.dbname).WithContext(context.Background())
 	if isDebug {
 		d.gormDb = d.gormDb.Debug()
 	}
