@@ -16,10 +16,10 @@ func TestMain(m *testing.M) {
 	writeDb := cfg.Section("db").Key("test_write").String()
 	readDbs := cfg.Section("db").Key("test_read").Strings(",")
 
-	RegisterCacheAccesser("127.0.0.1", "6379", "default")
-	RegisterSqlDb("test", false, writeDb)
-	RegisterSqlDb("test", true, readDbs...)
-	SetDbPoolParams("test", 180, 90, 5, 5)
-	SetDebug(true)
+	RegisterCacheAccessor("127.0.0.1", "6379", "default")
+	RegisterMasterDb("test", writeDb,
+		ConnMaxLifetime(180), ConnMaxIdleTime(90), ConnMaxOpenConns(5), ConnMaxIdleConns(5), IsDefault(true))
+	RegisterSlaveDb("test", readDbs)
+	//SetDebug(true)
 	m.Run()
 }

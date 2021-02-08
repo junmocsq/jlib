@@ -6,8 +6,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	RegisterRedisPool("default", "127.0.0.1", "6379", "", "test")
-	SetDefaultModule("default")
+	RegisterRedisPool("127.0.0.1", "6379")
 	//SetDebug(true)
 	m.Run()
 }

@@ -15,7 +15,6 @@ import (
 )
 
 func TestDb(t *testing.T) {
-	SetDbPoolParams("test")
 	db := GetDb("test")
 	db.AutoMigrate(&User{}, &Topic{}, &Comment{})
 	Convey("DB", t, func() {
@@ -144,10 +143,10 @@ func TestDb(t *testing.T) {
 			t.Log(uu)
 
 			// 新建会话模式线程安全，不带WithContext线程不安全
-			tx := db.Where("name LIKE ?", "%小%").WithContext(context.Background())
+			tx1 := db.Where("name LIKE ?", "%小%").WithContext(context.Background())
 			// 不安全的复用 Statement
 			for i := 0; i < 10; i++ {
-				go tx.Where("id > ?", 3).First(&u)
+				go tx1.Where("id > ?", 3).First(&u)
 			}
 
 			newLogger := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags),
@@ -155,7 +154,7 @@ func TestDb(t *testing.T) {
 					SlowThreshold: time.Microsecond,
 				})
 			// 会话模式
-			tx2 := db.Session(&gorm.Session{Logger: newLogger}).Debug()
+			tx2 := db.Session(&gorm.Session{Logger: newLogger})
 			tx2.First(&u)
 			tx2.Find(&users)
 			tx2.Model(&u).Update("sex", 1)

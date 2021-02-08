@@ -17,7 +17,6 @@ func genRandstr() string {
 
 func hash(tagNum, sql string, params []interface{}) string {
 	s := fmt.Sprintf("%s-%s-%#v", tagNum, sql, params)
-	fmt.Println(s)
 	data := []byte(s)
 	return fmt.Sprintf("%x", md5.Sum(data))
 }

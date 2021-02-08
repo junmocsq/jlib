@@ -2,12 +2,10 @@ package jredis
 
 import (
 	"github.com/gomodule/redigo/redis"
-	"github.com/sirupsen/logrus"
 	"time"
 )
 
 func initRedis(module, host, port, auth string) *redis.Pool {
-	logrus.WithField("redis", "init").Info("init redis ", module, "pool")
 	pool := &redis.Pool{
 		MaxIdle:     256,               // 最大的空闲连接数，表示即使没有redis连接时依然可以保持N个空闲的连接，而不被清除，随时处于待命状态。
 		MaxActive:   2000,              // 最大的连接数，表示同时最多有N个连接。0表示不限制。

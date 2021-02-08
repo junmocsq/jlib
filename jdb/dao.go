@@ -8,6 +8,7 @@ import (
 
 type Dao interface {
 	Debug() Dao
+	SetSlave() Dao
 	SetTag(tag string) Dao
 	SetKey(key string) Dao
 	PrepareSql(sql string, args ...interface{}) Dao
@@ -17,35 +18,38 @@ type Dao interface {
 	RowsAffected() (int64, error) // update,delete,replace into
 	Insert(model interface{}, fields ...string) error
 	Begin() (err error)
-	RollBack() (err error)
+	Rollback() (err error)
 	Commit() (err error)
 }
 
 type dao struct {
-	dbname  string
-	sql     string
-	params  []interface{}
-	tag     string
-	key     string
-	tagKey  string
-	isSlave bool
-	isCache bool
-	isDebug bool
-	db      DbAccessor
+	identifier string
+	sql        string
+	params     []interface{}
+	tag        string
+	key        string
+	tagKey     string
+	isSlave    bool
+	isCache    bool
+	isDebug    bool
+	db         DbAccessor
 }
 
-func NewDao(dbname string, isSlave ...bool) Dao {
+func NewDao(identifier ...string) Dao {
 	d := &dao{}
-	d.dbname = dbname
-	slave := false
-	if len(isSlave) > 0 {
-		slave = isSlave[0]
+	if len(identifier) > 0 {
+		d.identifier = identifier[0]
+	} else {
+		d.identifier = defaultIdentifier
 	}
-	d.isSlave = slave
 	d.isDebug = DEBUG
 	return d
 }
 
+func (d *dao) SetSlave() Dao {
+	d.isSlave = true
+	return d
+}
 func (d *dao) Debug() Dao {
 	d.isDebug = true
 	return d
@@ -69,7 +73,6 @@ func (d *dao) PrepareSql(sql string, args ...interface{}) Dao {
 	if d.isCache {
 		d.tagKey = d.genSqlCacheKey()
 	}
-	d.db.setSqlAndParams(d.sql, d.params)
 	return d
 }
 
@@ -115,8 +118,9 @@ func (d *dao) FetchOne(ret interface{}) (err error) {
 		}
 	}
 	if d.db == nil {
-		d.db = newDb(d.dbname, d.isDebug, d.isSlave)
+		d.db = newDb(d.identifier, d.isDebug, d.isSlave)
 	}
+	d.db.setSqlAndParams(d.sql, d.params)
 	err = d.db.FetchOne(ret)
 	if d.isCache {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -150,8 +154,9 @@ func (d *dao) FetchAll(ret interface{}) (err error) {
 		}
 	}
 	if d.db == nil {
-		d.db = newDb(d.dbname, d.isDebug, d.isSlave)
+		d.db = newDb(d.identifier, d.isDebug, d.isSlave)
 	}
+	d.db.setSqlAndParams(d.sql, d.params)
 	err = d.db.FetchAll(ret)
 	if d.isCache {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -172,8 +177,9 @@ func (d *dao) FetchAll(ret interface{}) (err error) {
 func (d *dao) RowsAffected() (int64, error) {
 	defer d.clear()
 	if d.db == nil {
-		d.db = newDb(d.dbname, d.isDebug, d.isSlave)
+		d.db = newDb(d.identifier, d.isDebug, d.isSlave)
 	}
+	d.db.setSqlAndParams(d.sql, d.params)
 	n, e := d.db.RowsAffected()
 	if d.isCache {
 		cacheAccess.Delete(d.getCacheKey())
@@ -184,8 +190,9 @@ func (d *dao) RowsAffected() (int64, error) {
 func (d *dao) Insert(model interface{}, fields ...string) error {
 	defer d.clear()
 	if d.db == nil {
-		d.db = newDb(d.dbname, d.isDebug, d.isSlave)
+		d.db = newDb(d.identifier, d.isDebug, d.isSlave)
 	}
+	d.db.setSqlAndParams(d.sql, d.params)
 	e := d.db.Insert(model, fields...)
 	if e == nil && d.isCache {
 		cacheAccess.Delete(d.getCacheKey())
@@ -195,13 +202,13 @@ func (d *dao) Insert(model interface{}, fields ...string) error {
 
 func (d *dao) Begin() (err error) {
 	if d.db == nil {
-		d.db = newDb(d.dbname, d.isDebug, d.isSlave)
+		d.db = newDb(d.identifier, d.isDebug, d.isSlave)
 	}
 	return d.db.Begin()
 }
 
-func (d *dao) RollBack() (err error) {
-	return d.db.RollBack()
+func (d *dao) Rollback() (err error) {
+	return d.db.Rollback()
 }
 
 func (d *dao) Commit() (err error) {
@@ -209,7 +216,7 @@ func (d *dao) Commit() (err error) {
 }
 
 func (d *dao) clear() {
-	d.dbname = ""
+	d.identifier = ""
 	d.sql = ""
 	d.params = nil
 	d.tag = ""

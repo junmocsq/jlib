@@ -2,11 +2,8 @@ package jdb
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/plugin/dbresolver"
-	"time"
 )
 
 type DbAccessor interface {
@@ -15,107 +12,54 @@ type DbAccessor interface {
 	RowsAffected() (int64, error)
 	Insert(model interface{}, fields ...string) error
 	Begin() (err error)
-	RollBack() (err error)
+	Rollback() (err error)
 	Commit() (err error)
 	setSqlAndParams(sql string, params []interface{})
 }
 
 var dbMap = make(map[string]*gorm.DB)
 
-// 注册数据库
-// params ConnMaxLifetime(s) MaxOpenConns MaxIdleConns
-// "mysql", "root:123456@tcp(localhost:3306)/test"
-func RegisterSqlDb(identifier string, isSlave bool, dsn ...string) {
-	if !isSlave {
-		db, err := gorm.Open(mysql.Open(dsn[0]), &gorm.Config{})
-		if err != nil {
-			panic(err)
-		}
-		dbMap[identifier] = db
-	} else {
-		db, ok := dbMap[identifier]
-		if !ok {
-			panic("请设置 " + identifier + " 的主库")
-		}
-		var arr []gorm.Dialector
-		for _, v := range dsn {
-			arr = append(arr, mysql.Open(v))
-		}
-		db.Use(dbresolver.Register(dbresolver.Config{
-			Replicas: arr,
-			// sources/replicas 负载均衡策略
-			Policy: dbresolver.RandomPolicy{},
-		}))
+func getDb(identifier ...string) *gorm.DB {
+	id := defaultIdentifier
+	if len(identifier) > 0 {
+		id = identifier[0]
 	}
-}
-
-// ConnMaxLifetime(s) ConnMaxIdleTime(s) MaxOpenConns MaxIdleConns
-func SetDbPoolParams(identifier string, params ...int) {
-	db, ok := dbMap[identifier]
+	db, ok := dbMap[id]
 	if !ok {
-		panic("请设置 " + identifier + " 的主库")
-	}
-	sqlDB, _ := db.DB()
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-
-	if err := sqlDB.PingContext(ctx); err != nil {
-		logrus.WithField("sql", "ping").Infof("%s  status:down!!!", identifier)
-		return
-	}
-
-	// ConnMaxLifetime(s) ConnMaxIdleTime(s) MaxOpenConns MaxIdleConns
-	// MaxOpenConns MaxIdleConns 建议相同
-	setting := []int{180, 90, 100, 100}
-	if len(params) > 4 {
-		panic("RegisterSqlDb params is error!")
-	}
-	for k, v := range params {
-		setting[k] = v
-	}
-	sqlDB.SetConnMaxLifetime(time.Second * time.Duration(setting[0]))
-	sqlDB.SetConnMaxIdleTime(time.Second * time.Duration(setting[1]))
-	sqlDB.SetMaxOpenConns(setting[2])
-	sqlDB.SetMaxIdleConns(setting[3])
-}
-
-func getDb(identifier string) *gorm.DB {
-	db, ok := dbMap[identifier]
-	if !ok {
-		panic("请注册 " + identifier + " 的数据库")
+		panic("请注册 " + id + " 的数据库")
 	}
 	return db
 }
 
 // 获取db
-func GetDb(identifier string) *gorm.DB {
+func GetDb(identifier ...string) *gorm.DB {
 	if DEBUG {
-		return getDb(identifier).Debug()
+		return getDb(identifier...).Debug()
 	} else {
-		return getDb(identifier)
+		return getDb(identifier...)
 	}
 
 }
 
 type db struct {
-	isSlave bool
-	sql     string
-	dbname  string
-	params  []interface{}
-	gormDb  *gorm.DB
-	gormTx  *gorm.DB
-	isTx    bool
+	isSlave    bool
+	sql        string
+	identifier string
+	params     []interface{}
+	gormDb     *gorm.DB
+	gormTx     *gorm.DB
+	isTx       bool
 }
 
-func newDb(dbname string, isDebug bool, isSlave ...bool) *db {
+func newDb(identifier string, isDebug bool, isSlave ...bool) *db {
 	d := &db{
-		isSlave: false,
-		dbname:  dbname,
+		isSlave:    false,
+		identifier: identifier,
 	}
 	if len(isSlave) > 0 {
 		d.isSlave = isSlave[0]
 	}
-	d.gormDb = getDb(d.dbname).WithContext(context.Background())
+	d.gormDb = getDb(d.identifier).WithContext(context.Background())
 	if isDebug {
 		d.gormDb = d.gormDb.Debug()
 	}
@@ -178,7 +122,7 @@ func (d *db) Begin() (err error) {
 	return d.gormTx.Error
 }
 
-func (d *db) RollBack() (err error) {
+func (d *db) Rollback() (err error) {
 	if !d.isTx {
 		panic("please BeginTx!!!")
 	}

@@ -1,13 +1,13 @@
 package jdb
 
-type cacheAccesser interface {
+type cacheAccessor interface {
 	Set(key, value string, expire int) bool
 	Get(key string) string
 	Delete(key string) bool
 	Expire(key string, expire int) bool
 }
 
-func newCache() cacheAccesser {
+func newCache() cacheAccessor {
 	return &cache{}
 }
 
