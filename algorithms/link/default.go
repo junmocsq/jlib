@@ -18,14 +18,17 @@ type doubleNode struct {
 type Linker interface {
 	Find(val interface{}) int
 	InsertByIndex(index int, val interface{}) bool
-	Add(val interface{}) bool
+	ValueOf(index int) interface{}
+	Add(values ...interface{}) bool
 	Del(val interface{}) bool
 	DelAll(val interface{}) int
 	Empty() bool
 	Length() int
+	Elements() []interface{}
+	Clear()
+	Print()
 }
 
-
 func Equal(v1, v2 interface{}) bool {
-	return reflect.DeepEqual(v1,v2)
+	return reflect.DeepEqual(v1, v2)
 }
