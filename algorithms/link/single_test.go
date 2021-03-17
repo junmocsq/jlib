@@ -16,6 +16,18 @@ func TestCircular(t *testing.T) {
 
 }
 
+func TestDouble(t *testing.T) {
+	s := NewDouble()
+	testLinker(s, t)
+
+}
+
+func TestDoubleCircular(t *testing.T) {
+	s := NewDoubleCircular()
+	testLinker(s, t)
+
+}
+
 func testLinker(s Linker, t *testing.T) {
 	arr := []interface{}{
 		"csq", "lmm", "zxf", "junmo", "lxq",
@@ -46,5 +58,8 @@ func testLinker(s Linker, t *testing.T) {
 	if s.Find("lmm") != -1 {
 		t.Error("删除全部失败")
 	}
+	s.Clear()
+	s.Add("lmm", "lmm", "lmm", "lmm")
 	s.Print()
+	s.DelAll("lmm")
 }

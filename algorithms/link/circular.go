@@ -171,6 +171,10 @@ func (s *circular) DelAll(val interface{}) int {
 			s.tail.next = s.head
 			s.length--
 			num++
+			if s.length == 0 {
+				s.tail = nil
+				break
+			}
 			temp = temp.next
 		} else {
 			break

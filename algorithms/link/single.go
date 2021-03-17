@@ -136,6 +136,9 @@ func (s *single) DelAll(val interface{}) int {
 			s.head = temp.next
 			s.length--
 			num++
+			if s.length == 0 {
+				break
+			}
 			temp = temp.next
 		} else {
 			break
@@ -177,7 +180,7 @@ func (s *single) Clear() {
 
 func (s *single) Print() {
 	temp := s.head
-	fmt.Printf("length:%d eles:", s.Length())
+	fmt.Printf("single length:%d eles:", s.Length())
 	for temp != nil {
 		fmt.Printf("%v ", temp.val)
 		temp = temp.next
