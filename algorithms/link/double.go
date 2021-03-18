@@ -42,6 +42,20 @@ func (d *double) Find(val interface{}) int {
 	return -1
 }
 
+func (d *double) FindAll(val interface{}) []int {
+	var res []int
+	temp := d.head
+	index := 0
+	for temp != nil {
+		if Equal(temp.val, val) {
+			res = append(res, index)
+		}
+		temp = temp.next
+		index++
+	}
+	return res
+}
+
 func (d *double) InsertByIndex(index int, val interface{}) bool {
 	if index > d.length {
 		return false
@@ -51,29 +65,30 @@ func (d *double) InsertByIndex(index int, val interface{}) bool {
 	}
 
 	if index == 0 {
-		node.next = d.head
 		if d.head != nil {
-			d.head.pre = node
+			node.next = d.head
+			node.next.pre = node
 		} else {
 			d.tail = node
 		}
 		d.head = node
 	} else {
-		temp := d.head
+		pre := d.head
 		for i := 1; i < index; i++ {
-			temp = temp.next
+			pre = pre.next
 		}
-		node.next = temp.next
-		node.pre = temp
-		if temp.next == nil {
+
+		if pre.next == nil {
 			d.tail = node
 		} else {
-			temp.next.pre = node
+			node.next = pre.next
+			node.next.pre = node
 		}
-		temp.next = node
+		node.pre = pre
+		pre.next = node
 	}
 	d.length++
-	return false
+	return true
 }
 
 func (d *double) ValueOf(index int) interface{} {
@@ -95,7 +110,7 @@ func (d *double) Add(values ...interface{}) bool {
 		node := &doubleNode{
 			val: val,
 		}
-		if d.tail == nil {
+		if d.head == nil {
 			d.head = node
 		} else {
 			node.pre = d.tail
@@ -118,6 +133,8 @@ func (d *double) Del(val interface{}) bool {
 		d.head = temp.next
 		if temp.next == nil {
 			d.tail = nil
+		} else {
+			d.head.pre = nil
 		}
 		d.length--
 		return true
@@ -126,10 +143,12 @@ func (d *double) Del(val interface{}) bool {
 	temp = temp.next
 	for temp != nil {
 		if Equal(temp.val, val) {
-			temp.pre.next = temp.next
-			temp.next.pre = temp.pre
 			if temp.next == nil {
 				d.tail = temp.pre
+				temp.pre.next = nil
+			} else {
+				temp.pre.next = temp.next
+				temp.next.pre = temp.pre
 			}
 			d.length--
 			return true
@@ -137,6 +156,62 @@ func (d *double) Del(val interface{}) bool {
 		temp = temp.next
 	}
 	return false
+}
+
+func (d *double) DelHead() interface{} {
+	if d.length == 0 {
+		return nil
+	}
+	val := d.head.val
+	d.head = d.head.next
+	if d.head != nil {
+		d.head.pre = nil
+	}
+	d.length--
+	return val
+}
+
+func (d *double) DelTail() interface{} {
+	if d.length == 0 {
+		return nil
+	}
+	val := d.tail.val
+	d.tail = d.tail.pre
+	if d.tail == nil {
+		d.head = nil
+	}
+	d.length--
+	return val
+}
+
+func (d *double) DelByIndex(index int) interface{} {
+	if d.length <= index || index < 0 {
+		return nil
+	}
+	var val interface{}
+
+	if index == 0 {
+		val = d.head.val
+		d.head = d.head.next
+		if d.head != nil {
+			d.head.pre = nil
+		}
+	} else {
+		temp := d.head
+		for i := 0; i < index; i++ {
+			temp = temp.next
+		}
+		if temp.next == nil {
+			d.tail = temp.pre
+			temp.pre.next = nil
+		} else {
+			temp.pre.next = temp.next
+			temp.next.pre = temp.pre
+		}
+		val = temp.val
+	}
+	d.length--
+	return val
 }
 
 func (d *double) DelAll(val interface{}) int {
@@ -150,6 +225,9 @@ func (d *double) DelAll(val interface{}) int {
 	for {
 		if Equal(temp.val, val) {
 			d.head = temp.next
+			if d.head != nil {
+				d.head.pre = nil
+			}
 			d.length--
 			num++
 			if d.length == 0 {
@@ -165,16 +243,19 @@ func (d *double) DelAll(val interface{}) int {
 	temp = temp.next
 	for temp != nil {
 		if Equal(temp.val, val) {
-			temp.pre.next = temp.next
-			temp.next.pre = temp.pre
 			if temp.next == nil {
 				d.tail = temp.pre
+				temp.pre.next = nil
+				break
+			} else {
+				temp.pre.next = temp.next
+				temp.next.pre = temp.pre
 			}
 			d.length--
 			num++
-		} else {
-			temp = temp.next
 		}
+		temp = temp.next
+
 	}
 	return num
 }

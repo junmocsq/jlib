@@ -17,10 +17,14 @@ type doubleNode struct {
 
 type Linker interface {
 	Find(val interface{}) int
+	FindAll(val interface{}) []int
 	InsertByIndex(index int, val interface{}) bool
 	ValueOf(index int) interface{}
 	Add(values ...interface{}) bool
 	Del(val interface{}) bool
+	DelByIndex(index int) interface{}
+	DelHead() interface{}
+	DelTail() interface{}
 	DelAll(val interface{}) int
 	Empty() bool
 	Length() int

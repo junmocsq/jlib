@@ -21,24 +21,24 @@ func NewDoubleCircular() Linker {
 	}
 }
 
-func (s *doubleCircular) last() *doubleNode {
-	if s.Empty() {
+func (d *doubleCircular) last() *doubleNode {
+	if d.Empty() {
 		return nil
 	}
-	return s.head.pre
+	return d.head.pre
 }
 
-func (s *doubleCircular) checkIsLast(node *doubleNode) bool {
-	return node == s.last()
+func (d *doubleCircular) checkIsLast(node *doubleNode) bool {
+	return node == d.last()
 }
 
-func (s *doubleCircular) Find(val interface{}) int {
-	temp := s.head
+func (d *doubleCircular) Find(val interface{}) int {
+	temp := d.head
 	if temp == nil {
 		return -1
 	}
 
-	for index := 0; index < s.length; index++ {
+	for index := 0; index < d.length; index++ {
 		if Equal(temp.val, val) {
 			return index
 		}
@@ -47,56 +47,69 @@ func (s *doubleCircular) Find(val interface{}) int {
 	return -1
 }
 
-func (s *doubleCircular) InsertByIndex(index int, val interface{}) bool {
+func (d *doubleCircular) FindAll(val interface{}) []int {
+	var res []int
+	temp := d.head
 
-	if index > s.length {
+	for index := 0; index < d.length; index++ {
+		if Equal(temp.val, val) {
+			res = append(res, index)
+		}
+		temp = temp.next
+	}
+	return res
+}
+
+func (d *doubleCircular) InsertByIndex(index int, val interface{}) bool {
+
+	if index > d.length {
 		return false
 	}
 	node := &doubleNode{
 		val: val,
 	}
-	if s.Empty() {
+	if d.Empty() {
 		node.next = node
 		node.pre = node
-		s.head = node
-		s.length++
+		d.head = node
+		d.length++
 		return true
 	}
 
-	temp := s.head
+	temp := d.head
 	for i := 0; i < index; i++ {
 		temp = temp.next
 	}
 	node.next = temp
 	node.pre = temp.pre
 	temp.pre = node
-	node.pre.next = temp
+	node.pre.next = node
 	if index == 0 {
-		s.head = node
+		d.head = node
 	}
-	s.length++
+	d.length++
 	return true
 }
 
-func (s *doubleCircular) ValueOf(index int) interface{} {
-	if s.length <= index {
+func (d *doubleCircular) ValueOf(index int) interface{} {
+	if d.length <= index {
 		return nil
 	}
-	temp := s.head
+	temp := d.head
 	for i := 0; i < index; i++ {
 		temp = temp.next
 	}
 	return temp.val
 }
 
-func (s *doubleCircular) Add(values ...interface{}) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (d *doubleCircular) Add(values ...interface{}) bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	var tail *doubleNode
-	if s.head == nil {
+	if d.head == nil {
 		tail = nil
 	} else {
-		tail = s.head.pre
+		tail = d.head.pre
 	}
 
 	for _, val := range values {
@@ -106,101 +119,150 @@ func (s *doubleCircular) Add(values ...interface{}) bool {
 		if tail == nil {
 			node.next = node
 			node.pre = node
-			s.head = node
+			d.head = node
 		} else {
 			node.next = tail.next
 			node.pre = tail
 			tail.next = node
 			node.next.pre = node
-
-			tail = node
 		}
-
-		s.length++
+		tail = node
+		d.length++
 	}
+
 	return true
 }
 
-func (s *doubleCircular) Del(val interface{}) bool {
-	if s.Empty() {
+func (d *doubleCircular) Del(val interface{}) bool {
+	if d.Empty() {
 		return false
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	temp := s.head
-	for {
+	temp := d.head
+	length := d.length
+	for i := 0; i < length; i++ {
 		if Equal(temp.val, val) {
-			s.head = temp.next
 			temp.next.pre = temp.pre
 			temp.pre.next = temp.next
-			s.length--
+			d.length--
 
-			if temp == s.head {
-				s.head = temp.next
+			if temp == d.head {
+				d.head = temp.next
 			}
 
-			if s.length == 0 {
-				s.head = nil
+			if d.length == 0 {
+				d.head = nil
 			}
-
 			return true
 		}
-		if s.checkIsLast(temp) {
-			break
-		}
+
 		temp = temp.next
 	}
 	return false
 }
 
-func (s *doubleCircular) DelAll(val interface{}) int {
+func (d *doubleCircular) DelHead() interface{} {
+	if d.length == 0 {
+		return nil
+	}
+	temp := d.head
+
+	temp.next.pre = temp.pre
+	temp.pre.next = temp.next
+	d.length--
+	d.head = temp.next
+
+	if d.length == 0 {
+		d.head = nil
+	}
+
+	return temp.val
+}
+
+func (d *doubleCircular) DelTail() interface{} {
+	if d.length == 0 {
+		return nil
+	}
+	temp := d.head.pre
+
+	temp.next.pre = temp.pre
+	temp.pre.next = temp.next
+	d.length--
+	if d.length == 0 {
+		d.head = nil
+	}
+	return temp.val
+}
+
+func (d *doubleCircular) DelByIndex(index int) interface{} {
+	if d.length <= index || index < 0 {
+		return nil
+	}
+	var val interface{}
+	temp := d.head
+	for i := 0; i < index; i++ {
+		temp = temp.next
+	}
+	val = temp.val
+	temp.next.pre = temp.pre
+	temp.pre.next = temp.next
+	d.length--
+
+	if temp == d.head {
+		d.head = temp.next
+	}
+
+	if d.length == 0 {
+		d.head = nil
+	}
+	return val
+}
+
+func (d *doubleCircular) DelAll(val interface{}) int {
 	num := 0
-	if s.Empty() {
+	if d.Empty() {
 		return num
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	temp := s.head
-	for {
+	temp := d.head
+	length := d.length
+	for i := 0; i < length; i++ {
 		if Equal(temp.val, val) {
-			s.head = temp.next
 			temp.next.pre = temp.pre
 			temp.pre.next = temp.next
-			s.length--
+			d.length--
 			num++
-			if temp == s.head {
-				s.head = temp.next
+			if temp == d.head {
+				d.head = temp.next
 			}
 
-			if s.length == 0 {
-				s.head = nil
+			if d.length == 0 {
+				d.head = nil
 				break
 			}
-
-		}
-		if s.checkIsLast(temp) {
-			break
 		}
 		temp = temp.next
 	}
 
 	return num
 }
-func (s *doubleCircular) Empty() bool {
-	return s.length == 0
+func (d *doubleCircular) Empty() bool {
+	return d.length == 0
 }
-func (s *doubleCircular) Length() int {
-	return s.length
+func (d *doubleCircular) Length() int {
+	return d.length
 }
 
-func (s *doubleCircular) Elements() []interface{} {
-	arr := make([]interface{}, 0, s.length)
-	temp := s.head
+func (d *doubleCircular) Elements() []interface{} {
+	arr := make([]interface{}, 0, d.length)
+	temp := d.head
 	for temp != nil {
 		arr = append(arr, temp.val)
-		if s.checkIsLast(temp) {
+		if d.checkIsLast(temp) {
 			break
 		}
 		temp = temp.next
@@ -208,16 +270,16 @@ func (s *doubleCircular) Elements() []interface{} {
 	return arr
 }
 
-func (s *doubleCircular) Clear() {
-	s.length = 0
-	s.head = nil
+func (d *doubleCircular) Clear() {
+	d.length = 0
+	d.head = nil
 }
 
-func (s *doubleCircular) Print() {
-	temp := s.head
-	fmt.Printf("double circular length:%d eles:", s.Length())
+func (d *doubleCircular) Print() {
+	temp := d.head
+	fmt.Printf("double circular length:%d eles:", d.Length())
 
-	for index := 0; index < s.length; index++ {
+	for index := 0; index < d.length; index++ {
 		//time.Sleep(time.Second)
 		fmt.Printf("%v ", temp.val)
 		temp = temp.next

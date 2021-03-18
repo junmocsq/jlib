@@ -6,7 +6,6 @@ import (
 )
 
 type circular struct {
-	head   *singleNode
 	tail   *singleNode
 	length int
 	mu     *sync.RWMutex
@@ -16,7 +15,6 @@ var _ Linker = &circular{}
 
 func NewCircular() Linker {
 	return &circular{
-		head:   nil,
 		tail:   nil,
 		length: 0,
 		mu:     new(sync.RWMutex),
@@ -27,12 +25,19 @@ func (s *circular) last() *singleNode {
 	return s.tail
 }
 
+func (s *circular) head() *singleNode {
+	if s.tail == nil {
+		return nil
+	}
+	return s.tail.next
+}
+
 func (s *circular) checkIsLast(node *singleNode) bool {
 	return node == s.tail
 }
 
 func (s *circular) Find(val interface{}) int {
-	temp := s.head
+	temp := s.head()
 	if temp == nil {
 		return -1
 	}
@@ -46,6 +51,22 @@ func (s *circular) Find(val interface{}) int {
 	return -1
 }
 
+func (s *circular) FindAll(val interface{}) []int {
+	var res []int
+	temp := s.head()
+	if temp == nil {
+		return res
+	}
+
+	for index := 0; index < s.length; index++ {
+		if Equal(temp.val, val) {
+			res = append(res, index)
+		}
+		temp = temp.next
+	}
+	return res
+}
+
 func (s *circular) InsertByIndex(index int, val interface{}) bool {
 
 	if index > s.length {
@@ -57,26 +78,18 @@ func (s *circular) InsertByIndex(index int, val interface{}) bool {
 	if s.Empty() {
 		node.next = node
 		s.tail = node
-		s.head = node
 		s.length++
 		return true
 	}
 
-	if index == 0 { // 插头
-		node.next = s.head
-		s.head = node
-		s.tail = s.head
-	} else if index == s.length { // 插尾
-		node.next = s.head
-		s.tail.next = node
+	pre := s.tail
+	for i := 0; i < index; i++ {
+		pre = pre.next
+	}
+	node.next = pre.next
+	pre.next = node
+	if s.length == index { // 新节点添加到尾巴
 		s.tail = node
-	} else { // 插中
-		temp := s.head
-		for i := 1; i < index; i++ {
-			temp = temp.next
-		}
-		node.next = temp.next
-		temp.next = node
 	}
 	s.length++
 	return true
@@ -86,7 +99,7 @@ func (s *circular) ValueOf(index int) interface{} {
 	if s.length <= index {
 		return nil
 	}
-	temp := s.head
+	temp := s.head()
 	for i := 0; i < index; i++ {
 		temp = temp.next
 	}
@@ -104,9 +117,8 @@ func (s *circular) Add(values ...interface{}) bool {
 		}
 		if s.tail == nil {
 			node.next = node
-			s.head = node
 		} else {
-			node.next = s.head
+			node.next = s.tail.next
 			s.tail.next = node
 		}
 		s.tail = node
@@ -121,32 +133,20 @@ func (s *circular) Del(val interface{}) bool {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	defer func() {
-		if s.length == 0 {
-			s.head = nil
-			s.tail = nil
-		}
-	}()
-	temp := s.head
-	if Equal(temp.val, val) { // 删除首元素
-		s.head = temp.next
-		s.tail.next = s.head
-		s.length--
-		return true
-	}
 
-	for index := 1; index < s.length; index++ {
-		if Equal(temp.next.val, val) {
-			if s.checkIsLast(temp.next) {
-				s.tail = temp
-				temp.next = s.head
-			} else {
-				temp.next = temp.next.next
+	pre := s.tail
+	for i := 0; i < s.length; i++ {
+		if Equal(pre.next.val, val) {
+			if s.checkIsLast(pre.next) {
+				s.tail = pre
 			}
+			pre.next = pre.next.next
 			s.length--
+			if s.length == 0 {
+				s.tail = nil
+			}
 			return true
 		}
-		temp = temp.next
 	}
 	return false
 }
@@ -158,45 +158,58 @@ func (s *circular) DelAll(val interface{}) int {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	defer func() {
-		if s.length == 0 {
-			s.head = nil
-			s.tail = nil
-		}
-	}()
-	temp := s.head
-	for { // 删除首部
-		if Equal(temp.val, val) {
-			s.head = temp.next
-			s.tail.next = s.head
+
+	pre := s.tail
+	length := s.length
+	for i := 0; i < length; i++ {
+		if Equal(pre.next.val, val) {
+			if s.checkIsLast(pre.next) {
+				s.tail = pre
+			}
+			pre.next = pre.next.next
 			s.length--
 			num++
 			if s.length == 0 {
 				s.tail = nil
-				break
 			}
-			temp = temp.next
 		} else {
-			break
-		}
-	}
-	length := s.length
-	for index := 1; index < length; index++ {
-		if Equal(temp.next.val, val) {
-			if s.checkIsLast(temp.next) {
-				s.tail = temp
-				temp.next = s.head
-			} else {
-				temp.next = temp.next.next
-			}
-			s.length--
-			num++
-		} else {
-			temp = temp.next
+			pre = pre.next
 		}
 	}
 	return num
 }
+
+func (s *circular) DelHead() interface{} {
+
+	return s.DelByIndex(0)
+}
+
+func (s *circular) DelTail() interface{} {
+
+	return s.DelByIndex(s.length - 1)
+}
+
+func (s *circular) DelByIndex(index int) interface{} {
+	if s.length <= index || index < 0 {
+		return nil
+	}
+	var val interface{}
+	pre := s.tail
+	for i := 0; i < index; i++ {
+		pre = pre.next
+	}
+	val = pre.next.val
+	pre.next = pre.next.next
+	s.length--
+	if s.checkIsLast(pre.next) {
+		s.tail = pre
+	}
+	if s.length == 0 {
+		s.tail = nil
+	}
+	return val
+}
+
 func (s *circular) Empty() bool {
 	return s.length == 0
 }
@@ -206,7 +219,7 @@ func (s *circular) Length() int {
 
 func (s *circular) Elements() []interface{} {
 	arr := make([]interface{}, 0, s.length)
-	temp := s.head
+	temp := s.head()
 	for temp != nil {
 		arr = append(arr, temp.val)
 		if s.checkIsLast(temp) {
@@ -219,12 +232,11 @@ func (s *circular) Elements() []interface{} {
 
 func (s *circular) Clear() {
 	s.length = 0
-	s.head = nil
 	s.tail = nil
 }
 
 func (s *circular) Print() {
-	temp := s.head
+	temp := s.head()
 	fmt.Printf("circular length:%d eles:", s.Length())
 
 	for index := 0; index < s.length; index++ {
