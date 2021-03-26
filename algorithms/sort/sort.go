@@ -152,3 +152,118 @@ func quickSort(arr []int, sortFlag string) {
 	f(0, len(arr)-1)
 
 }
+
+// 桶排序 按范围分桶，桶里面的数据采用快排等其他方法排序，
+func BucketSort(arr Sorter, sortFlag string) {
+	if arr, ok := arr.(*IntArr); ok {
+		bucketSort(arr.arr, sortFlag)
+	}
+}
+func bucketSort(arr []int, sortFlag string) {
+	if len(arr) < 1 {
+		return
+	}
+	min := arr[0]
+	max := arr[0]
+	for _, v := range arr {
+		if v < min {
+			min = v
+		}
+		if v > max {
+			max = v
+		}
+	}
+	bucketMax := max/100 + 1
+	bucketIndex := func(val int) int {
+		return val / 100
+	}
+	tempArr := make([][]int, bucketMax+1)
+	for _, v := range arr {
+		index := bucketIndex(v)
+		tempArr[index] = append(tempArr[index], v)
+	}
+
+	if sortFlag == SortAsc {
+		var i int
+		for _, v := range tempArr {
+			quickSort(v, sortFlag)
+			for _, _v := range v {
+				arr[i] = _v
+				i++
+			}
+		}
+	} else {
+		var i int
+		for index := bucketMax; index >= 0; index-- {
+			v := tempArr[index]
+			quickSort(v, sortFlag)
+			for _, _v := range v {
+				arr[i] = _v
+				i++
+			}
+		}
+	}
+}
+
+// 计数排序
+func CountingSort(arr Sorter, sortFlag string) {
+	if arr, ok := arr.(*IntArr); ok {
+		countingSort(arr.arr, sortFlag)
+	}
+}
+
+func countingSort(arr []int, sortFlag string) {
+	if len(arr) < 1 {
+		return
+	}
+	min := arr[0]
+	max := arr[0]
+	for _, v := range arr {
+		if v < min {
+			min = v
+		}
+		if v > max {
+			max = v
+		}
+	}
+
+	countingArr := make([]int, max-min+1)
+	for _, v := range arr {
+		index := v - min
+		countingArr[index]++
+	}
+
+	for i := 1; i < max-min+1; i++ {
+		countingArr[i] += countingArr[i-1]
+	}
+	if sortFlag == SortAsc {
+		var i int
+		var pre int
+		for k, v := range countingArr {
+			val := k + min
+			for m := 0; m < v-pre; m++ {
+				arr[i] = val
+				i++
+			}
+			pre = v
+		}
+	} else {
+		var i = len(arr) - 1
+		var pre int
+		for k, v := range countingArr {
+			val := k + min
+			for m := 0; m < v-pre; m++ {
+				arr[i] = val
+				i--
+			}
+			pre = v
+		}
+	}
+}
+
+// TODO 基数排序
+// 基数排序对要排序的数据是有要求的，需要可以分割出独立的“位”来比较，而且位之间有递进的关系，如果 a 数据的高位比 b 数据大，那剩下的低位就不用比较了。
+// 除此之外，每一位的数据范围不能太大，要可以用线性排序算法来排序，否则，基数排序的时间复杂度就无法做到 O(n) 了。
+func radixSort(arr []int, sortFlag string) {
+
+}

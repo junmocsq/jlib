@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-const ARR_LENGTH = 4000
-const ARR_MAX = 100000
+const ARR_LENGTH = 1000
+const ARR_MAX = 1000
 
 func TestInsertSort(t *testing.T) {
 	Convey("BubbleSort", t, func() {
@@ -132,6 +132,54 @@ func TestInsertSort(t *testing.T) {
 			So(intArr.CheckSort(SortDesc), ShouldBeTrue)
 		})
 	})
+
+	Convey("BucketSort", t, func() {
+		Convey("ASC", func() {
+			var arr []int
+			for i := 0; i < ARR_LENGTH; i++ {
+				rand.Seed(time.Now().UnixNano())
+				arr = append(arr, rand.Intn(ARR_MAX))
+			}
+			intArr := NewIntArr(arr)
+			BucketSort(intArr, SortAsc)
+			So(intArr.CheckSort(SortAsc), ShouldBeTrue)
+		})
+
+		Convey("DESC", func() {
+			var arr []int
+			for i := 0; i < ARR_LENGTH; i++ {
+				rand.Seed(time.Now().UnixNano())
+				arr = append(arr, rand.Intn(ARR_MAX))
+			}
+			intArr := NewIntArr(arr)
+			BucketSort(intArr, SortDesc)
+			So(intArr.CheckSort(SortDesc), ShouldBeTrue)
+		})
+	})
+
+	Convey("CountingSort", t, func() {
+		Convey("ASC", func() {
+			var arr []int
+			for i := 0; i < ARR_LENGTH; i++ {
+				rand.Seed(time.Now().UnixNano())
+				arr = append(arr, rand.Intn(ARR_MAX))
+			}
+			intArr := NewIntArr(arr)
+			CountingSort(intArr, SortAsc)
+			So(intArr.CheckSort(SortAsc), ShouldBeTrue)
+		})
+
+		Convey("DESC", func() {
+			var arr []int
+			for i := 0; i < ARR_LENGTH; i++ {
+				rand.Seed(time.Now().UnixNano())
+				arr = append(arr, rand.Intn(ARR_MAX))
+			}
+			intArr := NewIntArr(arr)
+			CountingSort(intArr, SortDesc)
+			So(intArr.CheckSort(SortDesc), ShouldBeTrue)
+		})
+	})
 }
 
 func getArr() []int {
@@ -200,5 +248,29 @@ func BenchmarkQuickSort(b *testing.B) {
 		copy(arr, arr1)
 		intArr := NewIntArr(arr)
 		QuickSort(intArr, SortDesc)
+	}
+}
+
+func BenchmarkBucketSort(b *testing.B) {
+	arr1 := getArr()
+	var arr = make([]int, ARR_LENGTH)
+	b.StopTimer()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		copy(arr, arr1)
+		intArr := NewIntArr(arr)
+		BucketSort(intArr, SortDesc)
+	}
+}
+
+func BenchmarkCountingSort(b *testing.B) {
+	arr1 := getArr()
+	var arr = make([]int, ARR_LENGTH)
+	b.StopTimer()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		copy(arr, arr1)
+		intArr := NewIntArr(arr)
+		CountingSort(intArr, SortDesc)
 	}
 }
