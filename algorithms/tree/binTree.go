@@ -131,6 +131,7 @@ func (l *linkBinTree) Add(ele interface{}) bool {
 			} else {
 				node.deep = temp.deep + 1
 				temp.right = node
+				l.num++
 				if node.deep > l.deep {
 					l.deep = node.deep
 				}
@@ -143,6 +144,7 @@ func (l *linkBinTree) Add(ele interface{}) bool {
 			} else {
 				node.deep = temp.deep + 1
 				temp.left = node
+				l.num++
 				if node.deep > l.deep {
 					l.deep = node.deep
 				}
@@ -181,6 +183,93 @@ func (l *linkBinTree) Find(ele interface{}) *linkBinNode {
 			}
 		}
 	}
+}
+
+func (l *linkBinTree) Del(ele interface{}) *linkBinNode {
+	temp := l.root
+	if temp == nil {
+		return nil
+	}
+	parent := temp
+
+	for {
+		compareRes := l.compare(temp.val, ele)
+		if compareRes == -999 {
+			return nil
+		}
+		if compareRes == 0 {
+			l.num--
+			if temp.right == nil && temp.left == nil {
+				if parent == temp {
+					l.root = nil
+					l.deep--
+				} else {
+					if parent.left == temp {
+						parent.left = nil
+					} else {
+						parent.right = nil
+					}
+				}
+				return temp
+			} else if temp.right == nil {
+				if parent == temp {
+					l.root = temp.left
+				} else {
+					if parent.left == temp {
+						parent.left = temp.left
+					} else {
+						parent.right = temp.left
+					}
+				}
+				return temp
+			} else if temp.left == nil {
+				if parent == temp {
+					l.root = temp.right
+				} else {
+					if parent.left == temp {
+						parent.left = temp.right
+					} else {
+						parent.right = temp.right
+					}
+				}
+				return temp
+			} else {
+				if temp.right.left == nil {
+					temp.right.left = temp.left
+					if parent == temp {
+						l.root = temp.right
+					} else {
+						if parent.left == temp {
+							parent.left = temp.right
+						} else {
+							parent.right = temp.right
+						}
+					}
+					return temp
+				} else {
+					ptemp := l.findLeftParent(temp)
+					temp.val = ptemp.left.val
+					temp = ptemp.left
+					ptemp.left = nil
+					return ptemp
+				}
+			}
+		}
+	}
+}
+
+func (l *linkBinTree) findLeftParent(temp *linkBinNode) *linkBinNode {
+	if temp.left == nil {
+		return nil
+	}
+	for {
+		if temp.left.left != nil {
+			temp = temp.left
+		} else {
+			break
+		}
+	}
+	return temp
 }
 
 func (l *linkBinTree) prePrint() string {
