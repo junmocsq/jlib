@@ -9,7 +9,6 @@ type Element struct {
 var (
 	ErrorStackEmpty = errors.New("栈为空")
 	ErrorStackFull  = errors.New("栈已满")
-	ErrorStacksFull = errors.New("栈已满")
 	ErrorQueueEmpty = errors.New("队列为空")
 	ErrorQueueFull  = errors.New("队列已满")
 )

@@ -57,7 +57,7 @@ func (s *queue) PushLeft(element *Element) error {
 }
 func (s *queue) PopLeft() (*Element, error) {
 	if s.IsEmpty() {
-		return nil, ErrorStackEmpty
+		return nil, ErrorQueueEmpty
 	}
 	ele := s.arr[s.front]
 	s.front = s.nextFront()
@@ -65,7 +65,7 @@ func (s *queue) PopLeft() (*Element, error) {
 }
 func (s *queue) PopRight() (*Element, error) {
 	if s.IsEmpty() {
-		return nil, ErrorStackEmpty
+		return nil, ErrorQueueEmpty
 	}
 	s.rear = s.prevRear()
 	ele := s.arr[s.rear]
