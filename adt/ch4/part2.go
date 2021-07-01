@@ -270,8 +270,113 @@ func (l *ListHead) MergeCross(other *ListHead) { // problem_7
 	other.Clear()
 }
 
-// TODO step + 右移最多step步 -左移最多step步
+// step + 右移最多step步 -左移最多step步
 func (l *ListHead) Move(val string, step int) bool { // problem_8
+	if step > 0 {
+		return l.moveRight(val, step)
+	} else {
+		return l.moveLeft(val, -step)
+	}
+}
 
-	return true
+func (l *ListHead) moveRight(val string, step int) bool { // problem_8
+	preHead := &ListNode{ // 虚拟头结点
+		val:         "",
+		listPointer: l.head,
+	}
+	temp := preHead
+	var searchPre *ListNode
+	var i = 0
+	for {
+		if temp.listPointer == nil {
+			break
+		}
+		if temp.listPointer.val == val {
+			searchPre = temp // 查询到数据对应结点的上一节点
+		}
+		temp = temp.listPointer
+		if searchPre != nil {
+			if temp.listPointer == nil || i == step {
+				node := searchPre.listPointer
+				searchPre.listPointer = searchPre.listPointer.listPointer
+				node.listPointer = temp.listPointer
+				temp.listPointer = node
+				l.head = searchPre.listPointer
+				if node.listPointer == nil {
+					l.tail = node
+				}
+				return true
+			}
+			i++
+		}
+
+	}
+	return false
+}
+
+// 最多右移step步
+func (l *ListHead) moveRightDouble(val string, step int) bool { // problem_8
+	preHead := &ListNode{ // 虚拟头结点
+		val:         "",
+		listPointer: l.head,
+	}
+	temp1 := preHead
+	temp2 := preHead
+
+	for i := 0; ; i++ {
+		if temp1.listPointer != nil {
+			temp1 = temp1.listPointer
+		}
+		if temp2.listPointer == nil {
+			return false
+		}
+		if i > step {
+			temp2 = temp2.listPointer
+		}
+		if i >= step {
+			if temp2.listPointer.val == val {
+				node := temp2.listPointer
+				temp2.listPointer = temp2.listPointer.listPointer
+				node.listPointer = temp1.listPointer
+				temp1.listPointer = node
+				l.head = preHead.listPointer
+				if node.listPointer == nil {
+					l.tail = node
+				}
+				return true
+			}
+		}
+	}
+}
+
+// 最多向左移step步
+// 双指针
+func (l *ListHead) moveLeft(val string, step int) bool { // problem_8
+	preHead := &ListNode{ // 虚拟头结点
+		val:         "",
+		listPointer: l.head,
+	}
+	temp1 := preHead
+	temp2 := preHead
+
+	for i := 0; ; i++ {
+		temp1 = temp1.listPointer
+		if temp1.listPointer == nil {
+			return false
+		}
+		if i >= step {
+			temp2 = temp2.listPointer
+		}
+		if temp1.listPointer.val == val {
+			node := temp1.listPointer
+			temp1.listPointer = temp1.listPointer.listPointer
+			node.listPointer = temp2.listPointer
+			temp2.listPointer = node
+			l.head = preHead.listPointer
+			if node.listPointer == nil {
+				l.tail = node
+			}
+			return true
+		}
+	}
 }

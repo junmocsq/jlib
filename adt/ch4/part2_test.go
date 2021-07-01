@@ -38,8 +38,8 @@ func TestNewList(t *testing.T) {
 	list.Add(a1...)
 	list2.Add(a2...)
 	list.MergeSortList(list2)
-	list.Print()
-	list2.Print()
+	//list.Print()
+	//list2.Print()
 
 	list.Clear()
 	list2.Clear()
@@ -48,7 +48,15 @@ func TestNewList(t *testing.T) {
 	list.Add(a1...)
 	list2.Add(a2...)
 	list.MergeCross(list2)
-	list.Print()
-	list.Move("x1", 3)
-	list.Print()
+	//list.Print()
+	list.Clear()
+	list.Add([]string{"x1", "x2", "x3", "x4", "x5", "x6", "x7"}...)
+	list.Move("x1", 6)
+	if !list.Equal([]string{"x2", "x3", "x4", "x5", "x6", "x7", "x1"}) {
+		t.Errorf("右移失败")
+	}
+	list.Move("x1", -6)
+	if !list.Equal([]string{"x1", "x2", "x3", "x4", "x5", "x6", "x7"}) {
+		t.Errorf("左移失败")
+	}
 }
