@@ -149,6 +149,7 @@ func (d *doubleLoopLink) AddFronts(vals ...string) {
 	}
 
 }
+
 func (d *doubleLoopLink) AddRears(vals ...string) {
 	for i := range vals {
 		d.AddNodeAfterPos(d.head.lLink, vals[i])
@@ -187,6 +188,7 @@ func (d *doubleLoopLink) Delete(val string) *doubleNode {
 	d.length--
 	return ele
 }
+
 func (d *doubleLoopLink) Clear() {
 	d.head.rLink = d.head
 	d.head.lLink = d.head
