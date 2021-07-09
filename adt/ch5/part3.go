@@ -118,6 +118,23 @@ func (b *binTree) LevelOrder() {
 	}
 	fmt.Println()
 }
+func (b *binTree) LevelOrderIndex() {
+	queue := NewBinNodeQueueIndex()
+	index := 1
+	queue.Push(b.root, index)
+	lastIndex := 1
+	for !queue.empty() {
+		node := queue.Pop()
+		queue.Push(node.left, node.level+1)
+		queue.Push(node.right, node.level+1)
+		if node.level != lastIndex {
+			fmt.Println()
+			lastIndex = node.level
+		}
+		fmt.Printf("%d(%d)  ", node.val, node.count)
+	}
+	fmt.Println()
+}
 
 type binNodeStack struct {
 	arr []*binNode
@@ -169,7 +186,47 @@ func (b *binNodeQueue) Push(node *binNode) {
 	b.arr = append(b.arr, node)
 }
 
+func (b *binNodeQueue) PushIndex(node *binNode) {
+	if node == nil {
+		return
+	}
+	b.arr = append(b.arr, node)
+}
+
 func (b *binNodeQueue) Pop() *binNode {
+	if b.empty() {
+		return nil
+	}
+	node := b.arr[0]
+	b.arr = b.arr[1:]
+	return node
+}
+
+type binNodeLevel struct {
+	binNode
+	level int
+}
+type binNodeQueueIndex struct {
+	arr []*binNodeLevel
+}
+
+func NewBinNodeQueueIndex() *binNodeQueueIndex {
+	return &binNodeQueueIndex{}
+}
+func (b *binNodeQueueIndex) empty() bool {
+	return len(b.arr) == 0
+}
+func (b *binNodeQueueIndex) Push(node *binNode, level int) {
+	if node == nil {
+		return
+	}
+	n := &binNodeLevel{
+		*node, level,
+	}
+	b.arr = append(b.arr, n)
+}
+
+func (b *binNodeQueueIndex) Pop() *binNodeLevel {
 	if b.empty() {
 		return nil
 	}

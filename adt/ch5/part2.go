@@ -4,6 +4,7 @@ type binNode struct {
 	val   int
 	left  *binNode
 	right *binNode
+	count int
 }
 
 type binTree struct {
@@ -41,7 +42,8 @@ func (b *binTree) Data(node *binNode) int {
 
 func (b *binTree) Add(val int) {
 	ele := &binNode{
-		val: val,
+		val:   val,
+		count: 1,
 	}
 	if b.root == nil {
 		b.root = ele
