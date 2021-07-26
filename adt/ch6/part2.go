@@ -224,6 +224,71 @@ func (l *AdjacencyLists) dfs() []int {
 	return result
 }
 
+func (l *AdjacencyLists) dfsTree() [][2]int {
+	var result [][2]int
+	var fStack func(index int)
+	s := stack()
+	fStack = func(index int) {
+		visited := make([]bool, len(l.vertexes))
+		s.stackPush(l.vertexes[index]) // head
+		s.stackPush(l.vertexes[index]) // node
+		for !s.stackEmpty() {
+			temp, _ := s.stackPop() // 顶点w
+			head, _ := s.stackPop() // 顶点w
+			temp1 := temp.next
+			for temp1 != nil { // 顶点w所在链表的下一个未访问节点入栈
+				if !visited[temp1.index] {
+					s.stackPush(head)
+					s.stackPush(temp1)
+					break
+				}
+				temp1 = temp1.next
+			}
+			if !visited[temp.index] {
+				if head.index != temp.index {
+					result = append(result, [2]int{head.index, temp.index})
+				}
+				visited[temp.index] = true
+				head = l.vertexes[temp.index]
+				v := head.next
+				for v != nil { // 顶点w的头结点的下一个未访问节点入栈
+					if !visited[v.index] {
+						s.stackPush(head)
+						s.stackPush(v)
+						break
+					}
+					v = v.next
+				}
+			}
+		}
+	}
+	fStack(0)
+	return result
+}
+
+// 深度优先生成树
+func (l *AdjacencyLists) dfsRecursionTree() [][2]int {
+	var fRecv func(v *Vertex)
+	visited := make([]bool, len(l.vertexes))
+	var edgeRes [][2]int
+	fRecv = func(v *Vertex) {
+		if !visited[v.index] {
+			visited[v.index] = true
+		}
+		head := v
+		for v.next != nil {
+			if !visited[v.next.index] {
+				edgeRes = append(edgeRes, [2]int{head.index, v.next.index})
+				visited[v.next.index] = true
+				fRecv(l.vertexes[v.next.index])
+			}
+			v = v.next
+		}
+	}
+	fRecv(l.vertexes[0])
+	return edgeRes
+}
+
 func (l *AdjacencyLists) bfs() []int {
 	var result []int
 	var fQueue func(index int)
@@ -236,6 +301,33 @@ func (l *AdjacencyLists) bfs() []int {
 			for temp != nil {
 				if !visited[temp.index] {
 					result = append(result, temp.index)
+					visited[temp.index] = true
+					q.addq(l.vertexes[temp.index])
+				}
+				temp = temp.next
+			}
+		}
+	}
+	fQueue(0)
+	return result
+}
+
+// 广度优先生成树
+func (l *AdjacencyLists) bfsTree() [][2]int {
+	var result [][2]int
+	var fQueue func(index int)
+	q := queue()
+	fQueue = func(index int) {
+		visited := make([]bool, len(l.vertexes))
+		q.addq(l.vertexes[index])
+		for !q.emptyq() {
+			temp, _ := q.deleteq()
+			head := temp
+			for temp != nil {
+				if !visited[temp.index] {
+					if head.index != temp.index {
+						result = append(result, [2]int{head.index, temp.index})
+					}
 					visited[temp.index] = true
 					q.addq(l.vertexes[temp.index])
 				}
