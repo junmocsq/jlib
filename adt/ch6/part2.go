@@ -184,7 +184,7 @@ func (l *AdjacencyLists) dfsRecursion() []int {
 			v = v.next
 		}
 	}
-	fRecv(l.vertexes[0])
+	fRecv(l.vertexes[3])
 	return res
 }
 
@@ -287,6 +287,52 @@ func (l *AdjacencyLists) dfsRecursionTree() [][2]int {
 	}
 	fRecv(l.vertexes[0])
 	return edgeRes
+}
+func (l *AdjacencyLists) dfnlow() {
+	dfn := make([]int, len(l.vertexes))
+	low := make([]int, len(l.vertexes))
+	//visited := make([]bool,len(l.vertexes))
+	for k, _ := range l.vertexes {
+		dfn[k] = -1
+		low[k] = -1
+	}
+	var f func(u, v int)
+	num := 0
+	min := func(a, b int) int {
+		if a < b {
+			return a
+		} else {
+			return b
+		}
+	}
+	var res []int
+	f = func(u, v int) {
+
+		res = append(res, u)
+		dfn[u] = num
+		low[u] = num
+		num++
+		head := l.vertexes[u]
+		for head != nil {
+			w := head.index
+
+			if dfn[w] < 0 {
+				f(w, u)
+				if u==1{
+					//fmt.Println(v,u,w,low,dfn)
+				}
+				low[u] = min(low[u], low[w])
+			} else if w != v {
+				if u==1{
+					//fmt.Println("--",v,u,w,low,dfn)
+				}
+				low[u] = min(low[u], dfn[w])
+			}
+			head = head.next
+		}
+	}
+	f(3, -1)
+	fmt.Println(res, dfn, low)
 }
 
 func (l *AdjacencyLists) bfs() []int {
