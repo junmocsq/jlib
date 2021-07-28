@@ -318,12 +318,12 @@ func (l *AdjacencyLists) dfnlow() {
 
 			if dfn[w] < 0 {
 				f(w, u)
-				if u==1{
+				if u == 1 {
 					//fmt.Println(v,u,w,low,dfn)
 				}
 				low[u] = min(low[u], low[w])
 			} else if w != v {
-				if u==1{
+				if u == 1 {
 					//fmt.Println("--",v,u,w,low,dfn)
 				}
 				low[u] = min(low[u], dfn[w])
