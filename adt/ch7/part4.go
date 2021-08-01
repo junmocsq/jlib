@@ -2,24 +2,24 @@ package ch7
 
 // 快速排序
 
-func QuickSort(arr []int) {
+func QuickSort2(arr []int) {
 	var f func(start, end int)
 
 	f = func(start, end int) {
-		if start>=end{
+		if start >= end {
 			return
 		}
 		pivot := arr[start]
-		i := start+1
+		i := start + 1
 		j := end
 		for i <= j {
-			for arr[i] < pivot  {
+			for arr[i] < pivot {
 				i++
 			}
-			for arr[j] > pivot  {
+			for arr[j] > pivot {
 				j--
 			}
-			if i<j{
+			if i < j {
 				arr[i], arr[j] = arr[j], arr[i]
 			}
 		}
