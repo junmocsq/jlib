@@ -152,3 +152,67 @@ func merge(arr1 []int, arr2 []int) []int {
 	res = append(res, arr2[j:]...)
 	return res
 }
+
+// 堆排序节点下沉
+func heapDown(arr []int, index int, length int) {
+	maxThree := func(a, b, c int) int {
+		if a >= b && a >= c {
+			return 0
+		}
+		if b >= a && b >= c {
+			return 1
+		}
+		return 2
+	}
+
+	for {
+		left := 2*index + 1
+		right := left + 1
+		if left >= length {
+			break
+		}
+		if right >= length {
+			if arr[left] > arr[index] {
+				arr[left], arr[index] = arr[index], arr[left]
+			}
+			break
+		}
+		temp := maxThree(arr[index], arr[left], arr[right])
+		if temp == 0 {
+			break
+		}
+		if temp == 1 {
+			arr[index], arr[left] = arr[left], arr[index]
+			index = left
+		}
+		if temp == 2 {
+			arr[index], arr[right] = arr[right], arr[index]
+			index = right
+		}
+	}
+}
+
+// HeapSort 堆排序
+func HeapSort(arr []int) {
+	quickCreateHeap := func() {
+		length := len(arr)
+		for i := (length - 2) / 2; i >= 0; i-- {
+			left := 2*i + 1
+			right := left + 1
+			if right == length {
+				if arr[i] < arr[left] {
+					arr[i], arr[left] = arr[left], arr[i]
+				}
+			} else {
+				heapDown(arr, i, len(arr))
+			}
+		}
+	}
+	quickCreateHeap() // 初始化最大堆
+
+	// 迭代交换第一个和最后一个未排序元素，元素长度减一，第一个节点下沉
+	for i := len(arr) - 1; i > 0; i-- {
+		arr[0], arr[i] = arr[i], arr[0]
+		heapDown(arr, 0, i)
+	}
+}

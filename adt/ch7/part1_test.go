@@ -109,5 +109,21 @@ func TestMergeSort(t *testing.T) {
 		t.Log(arr1)
 		t.Error("MergeSortLoop failed")
 	}
+}
 
+func TestHeapSort(t *testing.T) {
+	var arr []int
+	for i := 0; i < 100; i++ {
+		rand.Seed(time.Now().UnixNano())
+		arr = append(arr, rand.Intn(10000))
+	}
+	arr1 := make([]int, 100)
+	copy(arr1, arr)
+	sort.Ints(arr1)
+	HeapSort(arr)
+	if !reflect.DeepEqual(arr, arr1) {
+		t.Log(arr)
+		t.Log(arr1)
+		t.Error("HeapSort failed")
+	}
 }
