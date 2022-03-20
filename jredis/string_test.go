@@ -113,7 +113,7 @@ func TestJredis_STRING(t *testing.T) {
 			mapKv[k3] = v3
 			So(r.MSET(mapKv), ShouldBeTrue)
 			So(strings.Join(r.MGET(k1, k2, k3), "|"), ShouldEqual, v1+"|"+v2+"|"+v3)
-			r.DEL(key)
+			r.DEL(k1, k2, k3)
 		})
 
 		Convey("MSETNX", func() {
@@ -130,7 +130,7 @@ func TestJredis_STRING(t *testing.T) {
 			So(r.MSETNX(mapKv), ShouldEqual, 0)
 			So(strings.Join(r.MGET(k1, k2, k3), "|"), ShouldEqual, v1+"|"+v2+"|")
 			Printf("%#v", r.MGET(k1, k2, k3))
-			r.DEL(key)
+			r.DEL(k1, k2, k3)
 		})
 
 		Convey("SETRANGE", func() {

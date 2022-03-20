@@ -9,11 +9,16 @@ type jredis struct {
 	module string
 }
 
-func NewRedis(module ...string) *jredis {
+type Jredis struct {
+	jredis
+}
+
+func NewRedis(module ...string) *Jredis {
+	m := defaultModule
 	if len(module) >= 1 {
-		return &jredis{module: module[0]}
+		m = module[0]
 	}
-	return &jredis{module: defaultModule}
+	return &Jredis{jredis{m}}
 }
 
 func (j *jredis) Client() (redis.Conn, error) {

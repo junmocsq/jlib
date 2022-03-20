@@ -118,9 +118,9 @@ func TestJredis_LIST(t *testing.T) {
 		Convey("RPOPLPUSH", func() {
 			key2 := "list_kkk2"
 			r.DEL(key, key2)
-			So(r.RPOPLPUSH(key, "key2"), ShouldEqual, "")
+			So(r.RPOPLPUSH(key, key2), ShouldEqual, "")
 			r.RPUSH(key, "v1", "v2", "v3", "v4", "v5")
-			So(r.RPOPLPUSH(key, "key2"), ShouldEqual, "v5")
+			So(r.RPOPLPUSH(key, key2), ShouldEqual, "v5")
 			r.DEL(key, key2)
 		})
 
