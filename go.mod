@@ -1,25 +1,32 @@
 module github.com/junmocsq/jlib
 
-go 1.15
+go 1.18
 
 require (
-	github.com/chasex/redis-go-cluster v1.0.0
-	github.com/go-sql-driver/mysql v1.5.0
-	github.com/golang/mock v1.4.4 // indirect
-	github.com/gomodule/redigo v1.8.2
-	github.com/jonboulle/clockwork v0.2.2 // indirect
-	github.com/json-iterator/go v1.1.10
+	github.com/gomodule/redigo v1.8.8
+	github.com/json-iterator/go v1.1.12
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
-	github.com/lestrrat-go/strftime v1.0.3 // indirect
-	github.com/mailru/easyjson v0.7.6
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
-	github.com/sirupsen/logrus v1.7.0
-	github.com/smartystreets/goconvey v1.6.4
-	golang.org/x/tools v0.0.0-20190425150028-36563e24a262
+	github.com/sirupsen/logrus v1.8.1
+	github.com/smartystreets/goconvey v1.7.2
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
-	gopkg.in/ini.v1 v1.62.0
-	gorm.io/driver/mysql v1.0.3
-	gorm.io/gorm v1.20.7
-	gorm.io/plugin/dbresolver v1.0.1
+	gorm.io/driver/mysql v1.3.3
+	gorm.io/gorm v1.23.4
+)
+
+require (
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.4 // indirect
+	github.com/jonboulle/clockwork v0.2.3 // indirect
+	github.com/jtolds/gls v4.20.0+incompatible // indirect
+	github.com/lestrrat-go/strftime v1.0.5 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/smartystreets/assertions v1.2.0 // indirect
+	golang.org/x/sys v0.0.0-20191026070338-33540a1f6037 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )

@@ -24,6 +24,6 @@ func SendSmtpMail() {
 
 	// Send the email to Bob, Cora and Dan.
 	if err := d.DialAndSend(m); err != nil {
-		panic(err)
+		panic(any(err))
 	}
 }
