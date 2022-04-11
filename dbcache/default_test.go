@@ -9,14 +9,15 @@ import (
 	"time"
 )
 
-func TestMain(m *testing.M)  {
+func TestMain(m *testing.M) {
 	dsn := "root:123456@tcp(127.0.0.1:3306)/yizhen?charset=utf8mb4&parseTime=True&loc=Local"
-	RegisterDb(dsn,"yizhen",true)
+	RegisterDb(dsn, "yizhen", true)
 	RegisterCache(NewLocalCache())
 	//RedisCacheInit("127.0.0.1", "6379", "")
 	//RegisterCache(NewRedisCache())
 	m.Run()
 }
+
 type User struct {
 	Id         int    `gorm:"primaryKey;type:int;NOT NULL"`
 	Nickname   string `gorm:"uniqueIndex;size:50;NOT NULL;default:''"`
