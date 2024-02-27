@@ -23,17 +23,9 @@ var (
 )
 
 func init() {
-	dsn := "root:123456@tcp(127.0.0.1:3306)/yizhen?charset=utf8mb4&parseTime=True&loc=Local"
-	dbs = make(map[string]*gorm.DB)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true, // 关闭外键约束
-	})
-	//db = db.Debug()
-	if err != nil {
-		panic(any("failed to connect database"))
-	}
-	dbs[defaultDb] = db
-	RegisterCache(NewLocalCache())
+	// dsn := "root:123456@tcp(127.0.0.1:3306)/yizhen?charset=utf8mb4&parseTime=True&loc=Local"
+	// RegisterDb(dsn,"yizhen",true)
+	// RegisterCache(NewLocalCache())
 
 	//RedisCacheInit("127.0.0.1", "6379", "")
 	//RegisterCache(NewRedisCache())
