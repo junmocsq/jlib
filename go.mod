@@ -1,6 +1,6 @@
 module github.com/junmocsq/jlib
 
-go 1.18
+go 1.21
 
 require (
 	github.com/gomodule/redigo v1.8.8
