@@ -38,8 +38,9 @@ func (j *jredis) HDEL(key string, fields ...interface{}) int {
 // HEXISTS key field
 // Time complexity: O(1)
 // @return Integer reply, specifically:
-//			1 if the hash contains field.
-//			0 if the hash does not contain field, or key does not exist.
+//
+//	1 if the hash contains field.
+//	0 if the hash does not contain field, or key does not exist.
 func (j *jredis) HEXISTS(key string, field interface{}) int {
 	ret, _ := redis.Int(j.exec("HEXISTS", j.getKey(key), field))
 	return ret
@@ -163,8 +164,10 @@ func (j *jredis) HSCAN(key string, count int, pattern ...string) map[string]stri
 // HSET key field value [field value ...]
 // Time complexity: O(1) for each field/value pair added, so O(N) to add N field/value pairs when the command is called with multiple field/value pairs.
 // @description Sets field in the hash stored at key to value. If key does not exist, a new key holding a hash is created.
-// 				If field already exists in the hash, it is overwritten.
-//				As of Redis 4.0.0, HSET is variadic and allows for multiple field/value pairs.
+//
+//	If field already exists in the hash, it is overwritten.
+//	As of Redis 4.0.0, HSET is variadic and allows for multiple field/value pairs.
+//
 // @return Integer reply: The number of fields that were added.
 func (j *jredis) HSET(key string, field, value interface{}) int {
 	ret, _ := redis.Int(j.exec("HSET", j.getKey(key), field, value))
@@ -174,11 +177,14 @@ func (j *jredis) HSET(key string, field, value interface{}) int {
 // HSETNX key field value
 // Time complexity: O(1)
 // @description Sets field in the hash stored at key to value, only if field does not yet exist.
-// 				If key does not exist, a new key holding a hash is created.
-// 				If field already exists, this operation has no effect.
+//
+//	If key does not exist, a new key holding a hash is created.
+//	If field already exists, this operation has no effect.
+//
 // @return Integer reply, specifically:
-//			1 if field is a new field in the hash and value was set.
-//			0 if field already exists in the hash and no operation was performed.
+//
+//	1 if field is a new field in the hash and value was set.
+//	0 if field already exists in the hash and no operation was performed.
 func (j *jredis) HSETNX(key string, field, value interface{}) int {
 	ret, _ := redis.Int(j.exec("HSETNX", j.getKey(key), field, value))
 	return ret
@@ -187,9 +193,12 @@ func (j *jredis) HSETNX(key string, field, value interface{}) int {
 // HSTRLEN key field
 // Time complexity: O(1)
 // @description Returns the string length of the value associated with field in the hash stored at key.
-// 				If the key or the field do not exist, 0 is returned.
+//
+//	If the key or the field do not exist, 0 is returned.
+//
 // @return Integer reply: the string length of the value associated with field,
-// 			or zero when field is not present in the hash or key does not exist at all.
+//
+//	or zero when field is not present in the hash or key does not exist at all.
 func (j *jredis) HSTRLEN(key string, field interface{}) int {
 	ret, _ := redis.Int(j.exec("HSTRLEN", j.getKey(key), field))
 	return ret

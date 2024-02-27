@@ -50,6 +50,7 @@ func RegisterDb(dsn string, dbname string, isDefault ...bool) {
 func SETExpire(e int) {
 	expire = e
 }
+
 func Debug(debug ...bool) {
 	if len(debug) > 0 {
 		dbDebug = debug[0]
@@ -69,6 +70,7 @@ type Daoer interface {
 	Create(data interface{}) (int64, error)
 	ClearCache()
 }
+
 type Dao struct {
 	db     *gorm.DB
 	tag    string
@@ -92,25 +94,33 @@ func NewDb(dbname ...string) *Dao {
 	//rand.Seed(time.Now().UnixNano())
 	return &Dao{db: db}
 }
+
 func (d *Dao) DB() *gorm.DB {
 	return d.db
 }
+
 func (d *Dao) DryRun() *gorm.DB {
 	return d.db.Session(&gorm.Session{DryRun: true})
 }
+
+// 二级缓存 tag随机获取一个值val，使用val和sql组合生成key存缓存
 func (d *Dao) SetTag(tag string) Daoer {
 	d.tag = tag
 	return d
 }
+
+// 单独的key管理，相当于直接操作redis的key
 func (d *Dao) SetKey(key string) Daoer {
 	d.key = d.tag + key
 	return d
 }
+
 func (d *Dao) PrepareSql(sql string, params ...interface{}) Daoer {
 	d.sql = sql
 	d.params = params
 	return d
 }
+
 func (d *Dao) ClearCache() {
 	if d.key != "" {
 		cacheHandler.Del(d.key)
@@ -118,12 +128,14 @@ func (d *Dao) ClearCache() {
 		cacheHandler.Del(d.tag)
 	}
 }
+
 func (d *Dao) clear() {
 	d.tag = ""
 	d.key = ""
 	d.sql = ""
 	d.params = nil
 }
+
 func (d *Dao) Fetch(result interface{}) error {
 	defer d.clear()
 	strJson, need := d.cache()
@@ -137,6 +149,10 @@ func (d *Dao) Fetch(result interface{}) error {
 			result = nil
 		}
 		d.setCache(result)
+		// 未发现数据范围 record not found
+		if res.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
 	} else {
 		if strJson == "" {
 			return nil

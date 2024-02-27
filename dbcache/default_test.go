@@ -125,10 +125,10 @@ func BenchmarkPrepare3(b *testing.B) {
 	}
 }
 
-// 	BenchmarkSelectRedis
-//	BenchmarkSelectRedis-8              7528            146485 ns/op
-//	BenchmarkSelectLocal
-//	BenchmarkSelectLocal-8            417232              2808 ns/op
+// BenchmarkSelectRedis
+// BenchmarkSelectRedis-8              7528            146485 ns/op
+// BenchmarkSelectLocal
+// BenchmarkSelectLocal-8            417232              2808 ns/op
 func BenchmarkSelectRedis(b *testing.B) {
 	b.StopTimer()
 	RedisCacheInit("127.0.0.1", "6379", "")

@@ -35,9 +35,11 @@ type RedisZSetter interface {
 // XX: Only update elements that already exist. Never add elements.
 // NX: Don't update already existing elements. Always add new elements.
 // history
-// 		>= 2.4: Accepts multiple elements. In Redis versions older than 2.4 it was possible to add or update a single member per call.
-//		>= 3.0.2: Added the XX, NX, CH and INCR options.
-//		>=6.2: Added the GT and LT options.
+//
+//	>= 2.4: Accepts multiple elements. In Redis versions older than 2.4 it was possible to add or update a single member per call.
+//	>= 3.0.2: Added the XX, NX, CH and INCR options.
+//	>=6.2: Added the GT and LT options.
+//
 // @return Integer reply The number of elements added to the sorted set, not including elements already existing for which the score was updated.
 func (j *jredis) ZADD(key string, args ...interface{}) int {
 	arr := make([]interface{}, 1)
@@ -65,8 +67,10 @@ func (j *jredis) ZCOUNT(key string, min, max float64) int {
 
 // ZINCRBY key increment member
 // @description Increments the score of member in the sorted set stored at key by increment.
-// 				If member does not exist in the sorted set, it is added with increment as its score (as if its previous score was 0.0).
-// 				If key does not exist, a new sorted set with the specified member as its sole member is created.
+//
+//	If member does not exist in the sorted set, it is added with increment as its score (as if its previous score was 0.0).
+//	If key does not exist, a new sorted set with the specified member as its sole member is created.
+//
 // @return Bulk string reply: the new score of member (a double precision floating point number), represented as string.
 func (j *jredis) ZINCRBY(key string, increment float64, member interface{}) float64 {
 	res, err := j.exec("ZINCRBY", j.getKey(key), increment, member)
@@ -77,8 +81,10 @@ func (j *jredis) ZINCRBY(key string, increment float64, member interface{}) floa
 // ZLEXCOUNT key min max
 // Time complexity: O(log(N)) with N being the number of elements in the sorted set.
 // @description When all the elements in a sorted set are inserted with the same score,
-// 				in order to force lexicographical ordering, this command returns the number of elements
-// 				in the sorted set at key with a value between min and max.
+//
+//	in order to force lexicographical ordering, this command returns the number of elements
+//	in the sorted set at key with a value between min and max.
+//
 // @return Integer reply: the number of elements in the specified score range.
 func (j *jredis) ZLEXCOUNT(key string, min, max interface{}) int {
 	n, _ := redis.Int(j.exec("ZLEXCOUNT", j.getKey(key), min, max))
@@ -87,8 +93,9 @@ func (j *jredis) ZLEXCOUNT(key string, min, max interface{}) int {
 
 // ZRANGE key start stop [WITHSCORES]
 // @description Returns the specified range of elements in the sorted set stored at key.
-// 				The elements are considered to be ordered from the lowest to the highest score.
-// 				Lexicographical order is used for elements with equal score.
+//
+//	The elements are considered to be ordered from the lowest to the highest score.
+//	Lexicographical order is used for elements with equal score.
 func (j *jredis) ZRANGE(key string, start, stop int) (eles []string, scores []float64) {
 	n, _ := redis.Strings(j.exec("ZRANGE", j.getKey(key), start, stop, "WITHSCORES"))
 	length := len(n)
@@ -106,12 +113,16 @@ func (j *jredis) ZRANGE(key string, start, stop int) (eles []string, scores []fl
 
 // ZRANGEBYLEX key min max [LIMIT offset count]
 // @description When all the elements in a sorted set are inserted with the same score,
-// 				in order to force lexicographical ordering, this command returns all the elements
-// 				in the sorted set at key with a value between min and max.
+//
+//	in order to force lexicographical ordering, this command returns all the elements
+//	in the sorted set at key with a value between min and max.
+//
 // min max: Valid start and stop must start with ( or [, in order to specify if the range item is respectively exclusive or inclusive.
-// 			The special values of + or - for start and stop have the special meaning or positively infinite and negatively infinite strings,
-// 			so for instance the command ZRANGEBYLEX myzset - + is guaranteed to return all the elements in the sorted set,
-// 			if all the elements have the same score.
+//
+//	The special values of + or - for start and stop have the special meaning or positively infinite and negatively infinite strings,
+//	so for instance the command ZRANGEBYLEX myzset - + is guaranteed to return all the elements in the sorted set,
+//	if all the elements have the same score.
+//
 // @return Array reply: list of elements in the specified score range.
 func (j *jredis) ZRANGEBYLEX(key string, min, max interface{}, limit ...interface{}) []string {
 	var res interface{}
@@ -127,7 +138,9 @@ func (j *jredis) ZRANGEBYLEX(key string, min, max interface{}, limit ...interfac
 
 // ZRANGEBYSCORE key min max [WITHSCORES] [LIMIT offset count]
 // @description Returns all the elements in the sorted set at key with a score between min and max
-// 				(including elements with score equal to min or max). The elements are considered to be ordered from low to high scores.
+//
+//	(including elements with score equal to min or max). The elements are considered to be ordered from low to high scores.
+//
 // @usage ZRANGEBYSCORE zset (5 (10		ZRANGEBYSCORE zset -inf +inf
 // @return Array reply: list of elements in the specified score range (optionally with their scores).
 func (j *jredis) ZRANGEBYSCORE(key string, min, max interface{}, limit ...interface{}) (eles []string, scores []float64) {
@@ -154,10 +167,13 @@ func (j *jredis) ZRANGEBYSCORE(key string, min, max interface{}, limit ...interf
 
 // ZRANK key member
 // @description Returns the rank of member in the sorted set stored at key, with the scores ordered from low to high.
-// 				The rank (or index) is 0-based, which means that the member with the lowest score has rank 0.
+//
+//	The rank (or index) is 0-based, which means that the member with the lowest score has rank 0.
+//
 // @return
-//			If member exists in the sorted set, Integer reply: the rank of member.
-//			If member does not exist in the sorted set or key does not exist, Bulk string reply: nil.
+//
+//	If member exists in the sorted set, Integer reply: the rank of member.
+//	If member does not exist in the sorted set or key does not exist, Bulk string reply: nil.
 func (j *jredis) ZRANK(key string, member interface{}) int {
 	ret, err := redis.Int(j.exec("ZRANK", j.getKey(key), member))
 	if err == redis.ErrNil {
@@ -181,8 +197,10 @@ func (j *jredis) ZREM(key string, member ...interface{}) int {
 
 // ZREMRANGEBYLEX key min max
 // @description When all the elements in a sorted set are inserted with the same score,
-// 				in order to force lexicographical ordering, this command removes all elements
-// 				in the sorted set stored at key between the lexicographical range specified by min and max.
+//
+//	in order to force lexicographical ordering, this command removes all elements
+//	in the sorted set stored at key between the lexicographical range specified by min and max.
+//
 // @usage ZREMRANGEBYLEX myzset [alpha [omega
 func (j *jredis) ZREMRANGEBYLEX(key string, min, max interface{}) int {
 	ret, _ := redis.Int(j.exec("ZREMRANGEBYLEX", j.getKey(key), min, max))
@@ -191,10 +209,11 @@ func (j *jredis) ZREMRANGEBYLEX(key string, min, max interface{}) int {
 
 // ZREMRANGEBYRANK key start stop
 // @description Removes all elements in the sorted set stored at key with rank between start and stop.
-// 				Both start and stop are 0 -based indexes with 0 being the element with the lowest score.
-// 				These indexes can be negative numbers, where they indicate offsets starting at the element
-// 				with the highest score. For example: -1 is the element with the highest score,
-// 				-2 the element with the second highest score and so forth.
+//
+//	Both start and stop are 0 -based indexes with 0 being the element with the lowest score.
+//	These indexes can be negative numbers, where they indicate offsets starting at the element
+//	with the highest score. For example: -1 is the element with the highest score,
+//	-2 the element with the second highest score and so forth.
 func (j *jredis) ZREMRANGEBYRANK(key string, start, stop int) int {
 	ret, _ := redis.Int(j.exec("ZREMRANGEBYRANK", j.getKey(key), start, stop))
 	return ret
@@ -209,8 +228,9 @@ func (j *jredis) ZREMRANGEBYSCORE(key string, min, max interface{}) int {
 
 // ZREVRANGE key start stop [WITHSCORES]
 // @description Returns the specified range of elements in the sorted set stored at key.
-// 				The elements are considered to be ordered from the highest to the lowest score.
-// 				Descending lexicographical order is used for elements with equal score.
+//
+//	The elements are considered to be ordered from the highest to the lowest score.
+//	Descending lexicographical order is used for elements with equal score.
 func (j *jredis) ZREVRANGE(key string, start, stop int) (eles []string, scores []float64) {
 	n, _ := redis.Strings(j.exec("ZREVRANGE", j.getKey(key), start, stop, "WITHSCORES"))
 	length := len(n)
@@ -264,7 +284,8 @@ func (j *jredis) ZREVRANGEBYSCORE(key string, max, min interface{}, limit ...int
 
 // ZREVRANK key member
 // @description Returns the rank of member in the sorted set stored at key, with the scores ordered from high to low.
-// 				The rank (or index) is 0-based, which means that the member with the highest score has rank 0.
+//
+//	The rank (or index) is 0-based, which means that the member with the highest score has rank 0.
 func (j *jredis) ZREVRANK(key string, member interface{}) int {
 	ret, err := redis.Int(j.exec("ZREVRANK", j.getKey(key), member))
 	if err == redis.ErrNil {

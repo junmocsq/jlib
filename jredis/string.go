@@ -55,7 +55,8 @@ func (j *jredis) GET(key string) string {
 
 //	If key already exists and is a string, this command appends the value at the end of the string.
 //	If key does not exist it is created and set as an empty string, so APPEND will be similar to SET in this special case.
-// 	APPEND key value
+//	APPEND key value
+//
 // @return Integer reply: the length of the string after the append operation.
 func (j *jredis) APPEND(key string, value interface{}) int {
 	res, err := j.exec("APPEND", j.getKey(key), value)
