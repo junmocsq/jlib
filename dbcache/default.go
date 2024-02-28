@@ -139,7 +139,6 @@ func (d *Dao) clear() {
 func (d *Dao) Fetch(result interface{}) error {
 	defer d.clear()
 	strJson, need := d.cache()
-	logrus.WithField("cache", "strJson").Info(strJson, need,111)
 	if need {
 		res := d.db.Raw(d.sql, d.params...).Scan(result)
 		if res.Error != nil {
