@@ -69,6 +69,9 @@ type Daoer interface {
 	EXEC() (int64, error)
 	Create(data interface{}) (int64, error)
 	ClearCache()
+	Begin() Daoer
+	Rollback() Daoer
+	Commit() Daoer
 }
 
 type Dao struct {
@@ -101,6 +104,19 @@ func (d *Dao) DB() *gorm.DB {
 
 func (d *Dao) DryRun() *gorm.DB {
 	return d.db.Session(&gorm.Session{DryRun: true})
+}
+
+func (d *Dao) Begin() Daoer {
+	d.db = d.db.Begin()
+	return d
+}
+func (d *Dao) Rollback() Daoer {
+	d.db.Rollback()
+	return d
+}
+func (d *Dao) Commit() Daoer {
+	d.db.Commit()
+	return d
 }
 
 // 二级缓存 tag随机获取一个值val，使用val和sql组合生成key存缓存
